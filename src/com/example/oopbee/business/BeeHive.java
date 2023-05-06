@@ -6,6 +6,7 @@ import com.example.oopbee.entity.QueenBee;
 import com.example.oopbee.entity.WorkerBee;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -14,7 +15,7 @@ import java.util.Random;
 
 
 public class BeeHive {
-    private ArrayList<Bee> listBee;
+    private List<Bee> listBee;
     
     private Random rand = RandomSecure.getInstanceStrong();
 
@@ -46,7 +47,7 @@ public class BeeHive {
         }
     }
 
-    public ArrayList<Bee> getAllBees() {
+    public List<Bee> getAllBees() {
         return listBee;
     }
 
