@@ -8,7 +8,7 @@ public abstract class Bee {
     private int health;
     private boolean alive;
 
-    public Bee() {
+    protected Bee() {
         this.health = 100;
         this.alive = true;
     }
@@ -83,7 +83,6 @@ public abstract class Bee {
 
     @Override
     public String toString() {
-        String beeDetails = this.getType() + "\t" + this.getHealth() + "\t" + (isAlive() == true ? "alive" : "dead");
-        return beeDetails;
+        return this.getType() + "\t" + this.getHealth() + "\t" + (isAlive() ? "alive" : "dead");
     }
 }
