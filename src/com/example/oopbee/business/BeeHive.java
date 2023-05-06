@@ -46,7 +46,7 @@ public class BeeHive {
         }
     }
 
-    public ArrayList<Bee> getAllBees() {
+    public List<Bee> getAllBees() {
         return listBee;
     }
 
