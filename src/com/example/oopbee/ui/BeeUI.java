@@ -3,8 +3,8 @@
 import com.example.oopbee.business.BeeHive;
 import com.example.oopbee.entity.Bee;
 
-import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.List;
 
 
 /**
@@ -29,7 +29,7 @@ public class BeeUI {
             logger.log("\t3 - Exit");
             logger.log("Enter your choice (1, 2 or 3): ");
             choice = s.nextInt();
-            ArrayList<Bee> bees;
+            List<Bee> bees;
             switch (choice) {
                 case 1:
                     bh = new BeeHive();
@@ -58,7 +58,7 @@ public class BeeUI {
 
     }
 
-    public static void showBees(ArrayList<Bee> bees) {
+    public static void showBees(List<Bee> bees) {
         for (int i = 0; i < bees.size(); i++) {
             //show bee information
             logger.log(bees.get(i));
