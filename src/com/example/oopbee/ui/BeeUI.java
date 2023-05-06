@@ -1,4 +1,4 @@
-package com.example.oopbee.ui;
+	package com.example.oopbee.ui;
 
 import com.example.oopbee.business.BeeHive;
 import com.example.oopbee.entity.Bee;
@@ -23,11 +23,11 @@ public class BeeUI {
 
         while (keepRunning) {
             //menu
-            System.out.println("--------------Bee hive--------------");
-            System.out.println("\t1 – Create bee list");
-            System.out.println("\t2 – Attack bees");
-            System.out.println("\t3 - Exit");
-            System.out.print("Enter your choice (1, 2 or 3): ");
+            logger.log("--------------Bee hive--------------");
+            logger.log("\t1 – Create bee list");
+            logger.log("\t2 – Attack bees");
+            logger.log("\t3 - Exit");
+            logger.log("Enter your choice (1, 2 or 3): ");
             choice = s.nextInt();
             ArrayList<Bee> bees;
             switch (choice) {
@@ -35,16 +35,16 @@ public class BeeUI {
                     bh = new BeeHive();
                     bh.init();//create 10 bees
                     bees = bh.getAllBees();
-                    System.out.println("Bees details at the beginning:");
+                    logger.log("Bees details at the beginning:");
                     showBees(bees);
                     break;
                 case 2:
                     if (bh == null) {
-                        System.out.println("No bee!");
+                        logger.log("No bee!");
                     } else {
                         bh.attackBees();//attack bees
                         bees = bh.getAllBees();
-                        System.out.println("Bees details at the moment:");
+                        logger.log("Bees details at the moment:");
                         showBees(bees);
                     }
                     break;
@@ -61,7 +61,7 @@ public class BeeUI {
     public static void showBees(ArrayList<Bee> bees) {
         for (int i = 0; i < bees.size(); i++) {
             //show bee information
-            System.out.println(bees.get(i));
+            logger.log(bees.get(i));
         }
     }
 }
