@@ -21,6 +21,10 @@ import org.json.JSONObject;
 public class FileScan {
 	private String filepath = null;
 	private String id = null;
+	private String sha256 = null;
+	private String sha1 = null;
+	private String md5 = null;
+	private int size = -1;
 
 	public String getFilepath() {
 		return filepath;
@@ -47,10 +51,10 @@ public class FileScan {
 	}
 	
 	public void POSTFile(boolean fullupload, String apikey) throws IOException, InterruptedException {
-		if (!isImported())
-			return;
-		
+		// UPDATE FILESCAN ID
 		if (fullupload) {
+			if (!isImported())
+				return;
 	    	Path localFile = Paths.get(filepath);
 	    	
 	    	HttpClient client = HttpClient.newBuilder().build();
@@ -64,16 +68,52 @@ public class FileScan {
 	            .header("x-apikey", apikey).POST(ofMimeMultipartData(data, boundary))
 	            .uri(URI.create("https://www.virustotal.com/api/v3/files")).build();
 
-	        HttpResponse<String> vtResponse = client.send(request, BodyHandlers.ofString());
-	        JSONObject json = new JSONObject(vtResponse.body());
+	        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+	        JSONObject json = new JSONObject(response.body());
 	        try {
 		        String id = json.getJSONObject("data").getString("id");
 		        this.id = id;
 	        } catch (org.json.JSONException e) {
-		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message"));
+		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 		        return;
 	        }
 		}
+	}
+	
+	public void GETReport(String apikey) throws IOException, InterruptedException {
+		if (this.id == null) {
+			return;
+		}
+		HttpRequest request = HttpRequest.newBuilder()
+			    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/"+this.id))
+			    .header("accept", "application/json")
+			    .header("x-apikey", apikey)
+			    .method("GET", HttpRequest.BodyPublishers.noBody())
+			    .build();
+			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+		JSONObject json = new JSONObject(response.body());
+        try {
+	        this.sha256 = json.getJSONObject("meta").getJSONObject("file_info").getString("sha256");
+	        this.sha1 = json.getJSONObject("meta").getJSONObject("file_info").getString("sha1");
+	        this.md5 = json.getJSONObject("meta").getJSONObject("file_info").getString("md5");
+	        this.size = json.getJSONObject("meta").getJSONObject("file_info").getInt("size");
+        } catch (org.json.JSONException e) {
+	        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+	        return;
+        }
+	}
+	
+	public void printReport() {
+		System.out.println(">>> FILE REPORT SUMMARY <<<");
+		if (this.id == null || this.sha256 == null) {
+			System.out.println("ERROR: No report found...");
+			return;
+		}
+		System.out.println("> Metadata");
+		System.out.println("File size: " + size + " bytes");
+		System.out.println("SHA256: " + sha256);
+		System.out.println("SHA1: " + sha1);
+		System.out.println("MD5: " + md5);
 	}
 	
     public static BodyPublisher ofMimeMultipartData(Map<Object, Object> data,

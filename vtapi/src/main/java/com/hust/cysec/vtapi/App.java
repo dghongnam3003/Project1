@@ -36,6 +36,8 @@ public class App
             	if (fs.isImported()) {
             		fs.POSTFile(true, API_KEY);
             		System.out.println("> File ID: " + fs.getId());
+            		fs.GETReport(API_KEY);
+            		fs.printReport();
             	} else {
             		System.out.println("ERROR: No file imported!\n");
             		continue;
