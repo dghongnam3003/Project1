@@ -20,7 +20,7 @@ public class UploadFile {
             frame.setVisible(false);
             return fc.getSelectedFile();
         }else {
-            System.out.println("\nNext time select a file.");
+        	frame.setVisible(false);
             return null;
         }
     }
