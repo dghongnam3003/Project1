@@ -20,35 +20,12 @@ import org.json.JSONObject;
 
 public class FileScan {
 	private String filepath = null;
+	private long size = -1;
+	private String name = null;
 	private String id = null;
 	private String sha256 = null;
 	private String sha1 = null;
 	private String md5 = null;
-	private int size = -1;
-
-	public String getFilepath() {
-		return filepath;
-	}
-
-	public void setFilepath(File file) {
-		if(file == null) {
-			this.filepath = null;
-		} else {
-			this.filepath = file.getAbsolutePath();
-		}
-	}
-	
-	public String getId() {
-		return id;
-	}
-
-	public boolean isImported() {
-		if(this.filepath == null) {
-			return false;
-		} else {
-			return true;
-		}
-	}
 	
 	public void POSTFile(boolean fullupload, String apikey) throws IOException, InterruptedException {
 		// UPDATE FILESCAN ID
@@ -56,6 +33,7 @@ public class FileScan {
 			if (!isImported())
 				return;
 	    	Path localFile = Paths.get(filepath);
+	    	String uploadURL = GETUploadURL(apikey);
 	    	
 	    	HttpClient client = HttpClient.newBuilder().build();
 
@@ -66,7 +44,7 @@ public class FileScan {
 	        HttpRequest request = HttpRequest.newBuilder()
 	            .header("Content-Type", "multipart/form-data;boundary=" + boundary)
 	            .header("x-apikey", apikey).POST(ofMimeMultipartData(data, boundary))
-	            .uri(URI.create("https://www.virustotal.com/api/v3/files")).build();
+	            .uri(URI.create(uploadURL)).build();
 
 	        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 	        JSONObject json = new JSONObject(response.body());
@@ -79,7 +57,30 @@ public class FileScan {
 	        }
 		}
 	}
-	
+
+	private String GETUploadURL(String apikey) throws IOException, InterruptedException {
+		if(this.size < 33554432) {
+			return "https://www.virustotal.com/api/v3/files";
+		}
+		
+		HttpRequest request = HttpRequest.newBuilder()
+			    .uri(URI.create("https://www.virustotal.com/api/v3/files/upload_url"))
+			    .header("accept", "application/json")
+			    .header("x-apikey", apikey)
+			    .method("GET", HttpRequest.BodyPublishers.noBody())
+			    .build();
+		HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+		JSONObject json = new JSONObject(response.body());
+        try {
+	        String url = json.getString("data");
+	        System.out.println("(Warning: Uploading file >32MB)");
+	        return url;
+        } catch (org.json.JSONException e) {
+	        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+	        return "";
+        }
+	}
+
 	public void GETReport(String apikey) throws IOException, InterruptedException {
 		if (this.id == null) {
 			return;
@@ -110,10 +111,55 @@ public class FileScan {
 			return;
 		}
 		System.out.println("> Metadata");
+		System.out.println("File name: " + name);
 		System.out.println("File size: " + size + " bytes");
 		System.out.println("SHA256: " + sha256);
 		System.out.println("SHA1: " + sha1);
 		System.out.println("MD5: " + md5);
+	}
+	
+	public String getFilepath() {
+		return filepath;
+	}
+	public void setFilepath(File file) {
+		if(file == null) {
+			this.filepath = null;
+		} else {
+			this.filepath = file.getAbsolutePath();
+			try {
+				this.size = Files.size(Paths.get(filepath));
+				this.name = file.getName();
+			} catch (IOException e) {
+				this.filepath = null;
+			}
+		}
+	}
+	
+	public String getId() {
+		return id;
+	}
+	public long getSize() {
+		return size;
+	}
+	public String getName() {
+		return name;
+	}
+	public String getSha256() {
+		return sha256;
+	}
+	public String getSha1() {
+		return sha1;
+	}
+	public String getMd5() {
+		return md5;
+	}
+
+	public boolean isImported() {
+		if(this.filepath == null) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 	
     public static BodyPublisher ofMimeMultipartData(Map<Object, Object> data,
