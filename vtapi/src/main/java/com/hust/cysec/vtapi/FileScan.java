@@ -1,5 +1,6 @@
 package com.hust.cysec.vtapi;
 
+import java.io.FileWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -142,6 +143,31 @@ public class FileScan {
 		System.out.println("Failure: " + failure);
 		System.out.println("Malicious: " + malicious);
 		System.out.println("Undetected: " + undetected);
+		
+		try (FileWriter writer = new FileWriter("report.csv")) {
+	        // Write header
+	        writer.write("File name,File size (byte),SHA256,SHA1,MD5,Harmless,Unsupported types,Suspicious,Confirmed timeout,Timeout,Failure,Malicious,Undetected\n");
+
+	        // Write data
+	        StringBuilder sb = new StringBuilder();
+	        sb.append(name).append(",")
+	                .append(size).append(",")
+	                .append(sha256).append(",")
+	                .append(sha1).append(",")
+	                .append(md5).append(",")
+	                .append(harmless).append(",")
+	                .append(typeUnsup).append(",")
+	                .append(suspicious).append(",")
+	                .append(confirmedTimeOut).append(",")
+	                .append(timeOut).append(",")
+	                .append(failure).append(",")
+	                .append(malicious).append(",")
+	                .append(undetected).append("\n");
+
+	        writer.write(sb.toString());
+	    } catch (IOException e) {
+	        System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
+	    }
 	}
 	
 	public String getFilepath() {
