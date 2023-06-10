@@ -144,9 +144,12 @@ public class FileScan {
 		System.out.println("Malicious: " + malicious);
 		System.out.println("Undetected: " + undetected);
 		
-		try (FileWriter writer = new FileWriter("report.csv")) {
+		boolean isNewFile = !new File("report.csv").exists();
+		try (FileWriter writer = new FileWriter("report.csv", true)) {
 	        // Write header
-	        writer.write("File name,File size (byte),SHA256,SHA1,MD5,Harmless,Unsupported types,Suspicious,Confirmed timeout,Timeout,Failure,Malicious,Undetected\n");
+			if (isNewFile) {
+				writer.write("File name,File size (byte),SHA256,SHA1,MD5,Harmless,Unsupported types,Suspicious,Confirmed timeout,Timeout,Failure,Malicious,Undetected\n");
+			}
 
 	        // Write data
 	        StringBuilder sb = new StringBuilder();
