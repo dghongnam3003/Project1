@@ -26,6 +26,14 @@ public class FileScan {
 	private String sha256 = null;
 	private String sha1 = null;
 	private String md5 = null;
+	private int harmless;
+	private int typeUnsup;
+	private int suspicious;
+	private int confirmedTimeOut;
+	private int timeOut;
+	private int failure;
+	private int malicious;
+	private int undetected;
 	
 	public void POSTFile(boolean fullupload, String apikey) throws IOException, InterruptedException {
 		// UPDATE FILESCAN ID
@@ -57,7 +65,8 @@ public class FileScan {
 	        }
 		}
 	}
-
+	
+	//Get a URL for uploading files larger than 32MB
 	private String GETUploadURL(String apikey) throws IOException, InterruptedException {
 		if(this.size < 33554432) {
 			return "https://www.virustotal.com/api/v3/files";
@@ -98,6 +107,14 @@ public class FileScan {
 	        this.sha1 = json.getJSONObject("meta").getJSONObject("file_info").getString("sha1");
 	        this.md5 = json.getJSONObject("meta").getJSONObject("file_info").getString("md5");
 	        this.size = json.getJSONObject("meta").getJSONObject("file_info").getInt("size");
+	        this.harmless = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("harmless");
+	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("type-unsupported");
+	        this.suspicious = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("suspicious");
+	        this.confirmedTimeOut = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("confirmed-timeout");
+	        this.timeOut = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("timeout");
+	        this.failure = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("failure");
+	        this.malicious = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("malicious");
+	        this.undetected = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("undetected");
         } catch (org.json.JSONException e) {
 	        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 	        return;
@@ -116,6 +133,15 @@ public class FileScan {
 		System.out.println("SHA256: " + sha256);
 		System.out.println("SHA1: " + sha1);
 		System.out.println("MD5: " + md5);
+		System.out.println("> Stats");
+		System.out.println("Harmless: " + harmless);
+		System.out.println("Unsupported types: " + typeUnsup);
+		System.out.println("Suspicious: " + suspicious);
+		System.out.println("Confirmed timeout: " + confirmedTimeOut);
+		System.out.println("Timeout: " + timeOut);
+		System.out.println("Failure: " + failure);
+		System.out.println("Malicious: " + malicious);
+		System.out.println("Undetected: " + undetected);
 	}
 	
 	public String getFilepath() {
