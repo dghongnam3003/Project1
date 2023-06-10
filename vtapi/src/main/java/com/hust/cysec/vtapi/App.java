@@ -68,6 +68,14 @@ public class App
             } else if (choice == 4) {
             	System.out.println("STARTING: URL Analysis");
             	//URLReport();
+            	System.out.print("Please enter your URL path: ");
+            	String urlInput = input.next();
+            	URLScan us = new URLScan();
+            	us.POSTUrl(API_KEY, urlInput);
+            	System.out.println("> Report ID: " + us.getId());
+            	us.GETUrlReport(API_KEY);
+            	us.printReport();
+            	
             	break;
             } else
             	System.exit(0);

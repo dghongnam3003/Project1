@@ -144,8 +144,8 @@ public class FileScan {
 		System.out.println("Malicious: " + malicious);
 		System.out.println("Undetected: " + undetected);
 		
-		boolean isNewFile = !new File("report.csv").exists();
-		try (FileWriter writer = new FileWriter("report.csv", true)) {
+		boolean isNewFile = !new File("file_report.csv").exists();
+		try (FileWriter writer = new FileWriter("file_report.csv", true)) {
 	        // Write header
 			if (isNewFile) {
 				writer.write("File name,File size (byte),SHA256,SHA1,MD5,Harmless,Unsupported types,Suspicious,Confirmed timeout,Timeout,Failure,Malicious,Undetected\n");
@@ -207,6 +207,37 @@ public class FileScan {
 	}
 	public String getMd5() {
 		return md5;
+	}
+	public int getHarmless() {
+		return harmless;
+	}
+
+	public int getTypeUnsup() {
+		return typeUnsup;
+	}
+
+	public int getSuspicious() {
+		return suspicious;
+	}
+
+	public int getConfirmedTimeOut() {
+		return confirmedTimeOut;
+	}
+
+	public int getTimeOut() {
+		return timeOut;
+	}
+
+	public int getFailure() {
+		return failure;
+	}
+
+	public int getMalicious() {
+		return malicious;
+	}
+
+	public int getUndetected() {
+		return undetected;
 	}
 
 	public boolean isImported() {
