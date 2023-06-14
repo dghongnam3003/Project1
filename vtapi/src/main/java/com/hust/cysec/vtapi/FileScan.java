@@ -19,26 +19,18 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.json.JSONObject;
 
-public class FileScan {
+public class FileScan extends Scan {
 	private String filepath = null;
 	private long size = -1;
-	private String name = null;
-	private String id = null;
-	private String sha256 = null;
 	private String sha1 = null;
 	private String md5 = null;
-	private int harmless;
 	private int typeUnsup;
-	private int suspicious;
-	private int confirmedTimeOut;
-	private int timeOut;
 	private int failure;
-	private int malicious;
-	private int undetected;
 	
-	public void POSTFile(boolean fullupload, String apikey) throws IOException, InterruptedException {
-		// UPDATE FILESCAN ID
+	public void POSTFile (boolean fullupload, String apikey) throws IOException, InterruptedException {
+		// UPDATE OBJECT ID
 		if (fullupload) {
+			//POSTING FILE
 			if (!isImported())
 				return;
 	    	Path localFile = Paths.get(filepath);
@@ -57,22 +49,123 @@ public class FileScan {
 
 	        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 	        JSONObject json = new JSONObject(response.body());
+	        
+	        //UPDATE AnalysisId
 	        try {
-		        String id = json.getJSONObject("data").getString("id");
-		        this.id = id;
+		        this.setAnalysisId(json.getJSONObject("data").getString("id"));
 	        } catch (org.json.JSONException e) {
 		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 		        return;
 	        }
+	        
+	        // UPDATE ObjectId
+	        if (this.getObjectId() == null) {
+				if (this.getAnalysisId() != null) {
+					HttpRequest req = HttpRequest.newBuilder()
+						    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/" + getAnalysisId()))
+						    .header("accept", "application/json")
+						    .header("x-apikey", apikey)
+						    .method("GET", HttpRequest.BodyPublishers.noBody())
+						    .build();
+						HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
+					JSONObject temp = new JSONObject(resp.body());
+					try {
+				        this.setObjectId(temp.getJSONObject("meta").getJSONObject("file_info").getString("sha256"));
+			        } catch (org.json.JSONException e) {
+				        System.out.println("ERROR: " + temp.getJSONObject("error").getString("message") + " (" + temp.getJSONObject("error").getString("code") + ")");
+				        return;
+			        }
+				}
+			}
 		}
 	}
 	
+	public void GETReport(String apikey) throws IOException, InterruptedException {
+		if (this.getObjectId() == null)
+			return;
+		HttpRequest request = HttpRequest.newBuilder()
+			    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + this.getObjectId()))
+			    .header("accept", "application/json")
+			    .header("x-apikey", apikey)
+			    .method("GET", HttpRequest.BodyPublishers.noBody())
+			    .build();
+			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+		JSONObject json = new JSONObject(response.body());
+		this.setJson(json);
+		
+	    try {
+	        this.sha1 = json.getJSONObject("data").getJSONObject("attributes").getString("sha1");
+	        this.md5 = json.getJSONObject("data").getJSONObject("attributes").getString("md5");
+	        setObjectId(json.getJSONObject("data").getString("id"));
+	        this.size = json.getJSONObject("data").getJSONObject("attributes").getInt("size");
+	        setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
+	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("type-unsupported");
+	        setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
+	        setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
+	        this.failure = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("failure");
+	        setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
+	        setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
+	        setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
+	        
+	        System.out.println("\n>>> FILE REPORT SUMMARY <<<");
+			System.out.println("> Metadata");
+			System.out.println("File name: " + getName());
+			System.out.println("File size: " + size + " bytes");
+			System.out.println("SHA256: " + getObjectId());
+			System.out.println("SHA1: " + sha1);
+			System.out.println("MD5: " + md5);
+			System.out.println("> Stats");
+			System.out.println("Harmless: " + getHarmless());
+			System.out.println("Suspicious: " + getSuspicious());
+			System.out.println("Malicious: " + getMalicious());
+			System.out.println("Undetected: " + getUndetected());
+			System.out.println("Unsupported types: " + typeUnsup);
+			System.out.println("Timeout: " + getTimeout());
+			System.out.println("Failure: " + failure);
+	    } catch (org.json.JSONException e) {
+	        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+	        return;
+	    }
+	}
+
+	public void toCSVReport() {
+		if (this.getObjectId() == null || this.getJson() == null ) {
+			return;
+		}
+		boolean isNewFile = !new File("file_report.csv").exists();
+		try (FileWriter writer = new FileWriter("file_report.csv", true)) {
+	        // Write header
+			if (isNewFile) {
+				writer.write("Name,Size,SHA256,SHA1,MD5,Harmless,Suspicious,Malicious,Undetected,Unsupported,Timeout,Failure\n");
+			}
+	
+	        // Write CSV
+	        StringBuilder sb = new StringBuilder();
+	        sb.append(getName().replace(",", "")).append(",")
+	                .append(size).append(",")
+	                .append(getObjectId()).append(",")
+	                .append(sha1).append(",")
+	                .append(md5).append(",")
+	                .append(getHarmless()).append(",")
+	                .append(getSuspicious()).append(",")
+	                .append(getMalicious()).append(",")
+	                .append(getUndetected()).append(",")
+	                .append(typeUnsup).append(",")
+	                .append(getTimeout()).append(",")
+	                .append(failure).append("\n");
+	
+	        writer.write(sb.toString());
+	    } catch (IOException e) {
+	        System.out.printf("ERROR: Failed to write CSV file (%s)\n",e.getMessage());
+	    }
+	}
+
+
 	//Get a URL for uploading files larger than 32MB
 	private String GETUploadURL(String apikey) throws IOException, InterruptedException {
 		if(this.size < 33554432) {
 			return "https://www.virustotal.com/api/v3/files";
 		}
-		
 		HttpRequest request = HttpRequest.newBuilder()
 			    .uri(URI.create("https://www.virustotal.com/api/v3/files/upload_url"))
 			    .header("accept", "application/json")
@@ -91,88 +184,6 @@ public class FileScan {
         }
 	}
 
-	public void GETReport(String apikey) throws IOException, InterruptedException {
-		if (this.id == null) {
-			return;
-		}
-		HttpRequest request = HttpRequest.newBuilder()
-			    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/"+this.id))
-			    .header("accept", "application/json")
-			    .header("x-apikey", apikey)
-			    .method("GET", HttpRequest.BodyPublishers.noBody())
-			    .build();
-			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-		JSONObject json = new JSONObject(response.body());
-        try {
-	        this.sha256 = json.getJSONObject("meta").getJSONObject("file_info").getString("sha256");
-	        this.sha1 = json.getJSONObject("meta").getJSONObject("file_info").getString("sha1");
-	        this.md5 = json.getJSONObject("meta").getJSONObject("file_info").getString("md5");
-	        this.size = json.getJSONObject("meta").getJSONObject("file_info").getInt("size");
-	        this.harmless = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("harmless");
-	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("type-unsupported");
-	        this.suspicious = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("suspicious");
-	        this.confirmedTimeOut = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("confirmed-timeout");
-	        this.timeOut = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("timeout");
-	        this.failure = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("failure");
-	        this.malicious = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("malicious");
-	        this.undetected = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("undetected");
-        } catch (org.json.JSONException e) {
-	        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
-	        return;
-        }
-	}
-	
-	public void printReport() {
-		System.out.println(">>> FILE REPORT SUMMARY <<<");
-		if (this.id == null || this.sha256 == null) {
-			System.out.println("ERROR: No report found...");
-			return;
-		}
-		System.out.println("> Metadata");
-		System.out.println("File name: " + name);
-		System.out.println("File size: " + size + " bytes");
-		System.out.println("SHA256: " + sha256);
-		System.out.println("SHA1: " + sha1);
-		System.out.println("MD5: " + md5);
-		System.out.println("> Stats");
-		System.out.println("Harmless: " + harmless);
-		System.out.println("Unsupported types: " + typeUnsup);
-		System.out.println("Suspicious: " + suspicious);
-		System.out.println("Confirmed timeout: " + confirmedTimeOut);
-		System.out.println("Timeout: " + timeOut);
-		System.out.println("Failure: " + failure);
-		System.out.println("Malicious: " + malicious);
-		System.out.println("Undetected: " + undetected);
-		
-		boolean isNewFile = !new File("file_report.csv").exists();
-		try (FileWriter writer = new FileWriter("file_report.csv", true)) {
-	        // Write header
-			if (isNewFile) {
-				writer.write("File name,File size (byte),SHA256,SHA1,MD5,Harmless,Unsupported types,Suspicious,Confirmed timeout,Timeout,Failure,Malicious,Undetected\n");
-			}
-
-	        // Write data
-	        StringBuilder sb = new StringBuilder();
-	        sb.append(name).append(",")
-	                .append(size).append(",")
-	                .append(sha256).append(",")
-	                .append(sha1).append(",")
-	                .append(md5).append(",")
-	                .append(harmless).append(",")
-	                .append(typeUnsup).append(",")
-	                .append(suspicious).append(",")
-	                .append(confirmedTimeOut).append(",")
-	                .append(timeOut).append(",")
-	                .append(failure).append(",")
-	                .append(malicious).append(",")
-	                .append(undetected).append("\n");
-
-	        writer.write(sb.toString());
-	    } catch (IOException e) {
-	        System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
-	    }
-	}
-	
 	public String getFilepath() {
 		return filepath;
 	}
@@ -183,63 +194,16 @@ public class FileScan {
 			this.filepath = file.getAbsolutePath();
 			try {
 				this.size = Files.size(Paths.get(filepath));
-				this.name = file.getName();
+				this.setName(file.getName());
 			} catch (IOException e) {
 				this.filepath = null;
 			}
 		}
 	}
 	
-	public String getId() {
-		return id;
-	}
 	public long getSize() {
 		return size;
 	}
-	public String getName() {
-		return name;
-	}
-	public String getSha256() {
-		return sha256;
-	}
-	public String getSha1() {
-		return sha1;
-	}
-	public String getMd5() {
-		return md5;
-	}
-	public int getHarmless() {
-		return harmless;
-	}
-
-	public int getTypeUnsup() {
-		return typeUnsup;
-	}
-
-	public int getSuspicious() {
-		return suspicious;
-	}
-
-	public int getConfirmedTimeOut() {
-		return confirmedTimeOut;
-	}
-
-	public int getTimeOut() {
-		return timeOut;
-	}
-
-	public int getFailure() {
-		return failure;
-	}
-
-	public int getMalicious() {
-		return malicious;
-	}
-
-	public int getUndetected() {
-		return undetected;
-	}
-
 	public boolean isImported() {
 		if(this.filepath == null) {
 			return false;

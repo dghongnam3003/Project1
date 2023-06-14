@@ -9,11 +9,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import org.json.JSONObject;
 
-public class URLScan {
-	private String url = null;
-	private String id = null;
-	private String identifier = null;
-	private int harmless, malicious, suspicious, undetected, timeout;
+public class URLScan extends Scan {
 	
 	//post URL
 	public void POSTUrl(String apikey, String urlStr) throws IOException, InterruptedException {
@@ -32,7 +28,7 @@ public class URLScan {
 		JSONObject json = new JSONObject(response.body());
 		try {
 			String id = json.getJSONObject("data").getString("id");
-			this.id = id;
+			setAnalysisId(id);
 		} catch (org.json.JSONException e) {
 			System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 	        return;
@@ -40,26 +36,27 @@ public class URLScan {
 	}
 	
 	//get URL report
-	public void GETUrlReport(String apikey) throws IOException, InterruptedException {
-		if (this.id == null) return;
+	public void GETReport(String apikey) throws IOException, InterruptedException {
+		if (this.getAnalysisId() == null) return;
 		
 		HttpRequest request = HttpRequest.newBuilder()
-			    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/" + this.id))
+			    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/" + getAnalysisId()))
 			    .header("accept", "application/json")
 			    .header("x-apikey", apikey)
 			    .method("GET", HttpRequest.BodyPublishers.noBody())
 			    .build();
 			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
 		JSONObject json = new JSONObject(response.body());
+		setJson(json);
 		//set attributes
 		try {
-			this.url = json.getJSONObject("meta").getJSONObject("url_info").getString("url");
-			this.identifier = json.getJSONObject("meta").getJSONObject("url_info").getString("id");
-			this.harmless = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("harmless");
-			this.undetected = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("undetected");
-			this.malicious = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("malicious");
-			this.suspicious = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("suspicious");
-			this.timeout = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("timeout");
+			setName(json.getJSONObject("meta").getJSONObject("url_info").getString("url"));
+			setObjectId(json.getJSONObject("meta").getJSONObject("url_info").getString("id"));
+			setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("harmless"));
+			setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("undetected"));
+			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("malicious"));
+			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("suspicious"));
+			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("timeout"));
 		} catch (org.json.JSONException e) {
 			System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 	        return;
@@ -68,21 +65,21 @@ public class URLScan {
 	}
 	
 	//print the report and dump to csv file
-	public void printReport() {
+	public void toCSVReport() {
 		System.out.println(">>> URL REPORT SUMMARY <<<");
-		if (this.id == null || this.identifier == null) {
+		if (this.getObjectId() == null || getJson() == null) {
 			System.out.println("ERROR: No report found...");
 			return;
 		}
 		System.out.println("> Metadata");
-		System.out.println("URL path: " + url);
-		System.out.println("URL identifier: " + identifier);
+		System.out.println("URL path: " + getName());
+		System.out.println("URL identifier: " + getObjectId());
 		System.out.println("> Stats");
-		System.out.println("Harmless: " + harmless);
-		System.out.println("Malicious: " + malicious);
-		System.out.println("Suspicious: " + suspicious);
-		System.out.println("Undetected: " + undetected);
-		System.out.println("Timeout: " + timeout);
+		System.out.println("Harmless: " + getHarmless());
+		System.out.println("Malicious: " + getMalicious());
+		System.out.println("Suspicious: " + getSuspicious());
+		System.out.println("Undetected: " + getUndetected());
+		System.out.println("Timeout: " + getTimeout());
 		
 		boolean isNewFile = !new File("url_report.csv").exists();
 		try (FileWriter writer = new FileWriter("url_report.csv", true)) {
@@ -93,49 +90,17 @@ public class URLScan {
 
 	        // Write data
 	        StringBuilder sb = new StringBuilder();
-	        sb.append(url).append(",")
-	                .append(identifier).append(",")
-	                .append(harmless).append(",")
-	                .append(suspicious).append(",")
-	                .append(malicious).append(",")
-	                .append(undetected).append(",")
-	                .append(timeout).append("\n");
+	        sb.append(getName()).append(",")
+	                .append(getObjectId()).append(",")
+	                .append(getHarmless()).append(",")
+	                .append(getSuspicious()).append(",")
+	                .append(getMalicious()).append(",")
+	                .append(getUndetected()).append(",")
+	                .append(getTimeout()).append("\n");
 
 	        writer.write(sb.toString());
 	    } catch (IOException e) {
 	        System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
 	    }
-	}
-
-	public String getUrl() {
-		return url;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public String getIdentifier() {
-		return identifier;
-	}
-
-	public int getHarmless() {
-		return harmless;
-	}
-
-	public int getMalicious() {
-		return malicious;
-	}
-
-	public int getSuspicious() {
-		return suspicious;
-	}
-
-	public int getUndetected() {
-		return undetected;
-	}
-
-	public int getTimeout() {
-		return timeout;
 	}
 }

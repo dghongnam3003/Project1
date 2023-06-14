@@ -26,7 +26,7 @@ public class App
             }
             else{
             	System.out.println("ERROR: Invalid Input...\n");
-            	Thread.sleep(2000);
+            	Thread.sleep(1000);
             	continue;
             }
             
@@ -37,7 +37,7 @@ public class App
             	System.out.print("Or Input filename (in this directory): ");
             	String filename = input.nextLine().strip();
             	FileScan fs = new FileScan();
-            	if (filename.isEmpty()) {
+            	if (filename.isBlank()) {
                 	UploadFile file = new UploadFile();
                 	fs.setFilepath(file.getFile());
             	} else {
@@ -46,13 +46,15 @@ public class App
             	}
                 
             	if (fs.isImported()) {
+            		System.out.println("...Posting");
             		fs.POSTFile(true, API_KEY);
-            		System.out.println("> Report ID: " + fs.getId());
+            		System.out.println("...Getting report");
             		fs.GETReport(API_KEY);
-            		fs.printReport();
+            		System.out.println("...Saving");
+            		fs.toCSVReport();
             	} else {
             		System.out.println("ERROR: No file imported!\n");
-            		Thread.sleep(2000);
+            		Thread.sleep(1000);
             		continue;
             	}
                 break;
@@ -67,15 +69,22 @@ public class App
             	break;
             } else if (choice == 4) {
             	System.out.println("STARTING: URL Analysis");
-            	//URLReport();
-            	System.out.print("Please enter your URL path: ");
-            	String urlInput = input.next();
-            	URLScan us = new URLScan();
-            	us.POSTUrl(API_KEY, urlInput);
-            	System.out.println("> Report ID: " + us.getId());
-            	us.GETUrlReport(API_KEY);
-            	us.printReport();
-            	
+            	System.out.print("Input URL (or press Enter to cancel): ");
+            	String url = input.nextLine().strip();
+            	System.out.println("");
+            	if (!url.isBlank()) {
+	            	URLScan us = new URLScan();
+	            	System.out.println("...Posting");
+	            	us.POSTUrl(API_KEY, url);
+	            	System.out.println("...Getting report");
+	            	us.GETReport(API_KEY);
+	            	System.out.println("...Saving");
+	            	us.toCSVReport();
+            	} else{
+                	System.out.println("ERROR: Invalid Input...\n");
+                	Thread.sleep(2000);
+                	continue;
+                }
             	break;
             } else
             	System.exit(0);
