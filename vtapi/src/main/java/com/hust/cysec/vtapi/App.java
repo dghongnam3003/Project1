@@ -7,7 +7,7 @@ import java.io.File;
 
 public class App 
 {
-    public final static String API_KEY = "ffefe1cf95c72be26918974d944179629816e48e7590c64f484b43dbc2c625c2";
+    public final static String API_KEY = "740bce69a223d9434f8c789ce8b432e3e15cbfb4e8bf78b72a6fa41396b8b53a";
     
     public static void main( String[] args ) throws IOException, InterruptedException
     {
@@ -68,6 +68,14 @@ public class App
             } else if (choice == 4) {
             	System.out.println("STARTING: URL Analysis");
             	//URLReport();
+            	System.out.print("Please enter your URL path: ");
+            	String urlInput = input.next();
+            	URLScan us = new URLScan();
+            	us.POSTUrl(API_KEY, urlInput);
+            	System.out.println("> Report ID: " + us.getId());
+            	us.GETUrlReport(API_KEY);
+            	us.printReport();
+            	
             	break;
             } else
             	System.exit(0);
