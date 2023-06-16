@@ -18,7 +18,6 @@ public class App
             System.out.println("*******************************");
             System.out.print("> Please choose: ");
             
-            @SuppressWarnings("resource")
 			Scanner input = new Scanner(System.in);
             if(input.hasNextInt()) {
             	   choice = input.nextInt();
@@ -37,28 +36,27 @@ public class App
 	            	System.out.println("Press ENTER to Browse Files...");
 	            	System.out.print("Or Input filename (in this directory): ");
 	            	String filename = input.nextLine().strip();
-	            	FileScan fs = new FileScan();
+	            	FileScan fileS = new FileScan();
 	            	if (filename.isBlank()) {
 	                	UploadFile file = new UploadFile();
-	                	fs.setFilepath(file.getFile());
+	                	fileS.setFilepath(file.getFile());
 	            	} else {
 	            		File file = new File(filename);
-	            		fs.setFilepath(file);
+	            		fileS.setFilepath(file);
 	            	}
 	                
-	            	if (fs.isImported()) {
+	            	if (fileS.isValid()) {
 	            		System.out.println("...Uploading & Scanning");
-	            		fs.POST(API_KEY);
+	            		fileS.POST(API_KEY);
+	            		System.out.println("...Getting report");
+	            		fileS.GETReport(API_KEY);
 	            	} else {
 	            		System.out.println("ERROR: No file imported!\n");
 	            		Thread.sleep(1000);
 	            		break;
 	            	}
 
-	            	System.out.println("...Getting report");
-            		fs.GETReport(API_KEY);
-            		
-            		actionsMenu(fs, input);
+            		actionsMenu(fileS, input);
             		Thread.sleep(1000);
 	                break;
 
@@ -67,57 +65,60 @@ public class App
                 	System.out.print("Input URL (or press Enter to cancel): ");
                 	String url = input.nextLine().strip();
                 	System.out.println("");
-                	URLScan us = new URLScan();
+                	URLScan urlS = new URLScan();
                 	if (!url.isBlank()) {
-    	            	us.setName(url);
+    	            	urlS.setName(url);
     	            	System.out.println("...Scanning");
-    	            	us.POST(API_KEY);
+    	            	urlS.POST(API_KEY);
+    	            	System.out.println("...Getting report");
+    	            	urlS.GETReport(API_KEY);
                 	} else{
                     	System.out.println("ERROR: Invalid Input...\n");
                     	Thread.sleep(1000);
                     	break;
                     }
-                	
-                	System.out.println("...Getting report");
-	            	us.GETReport(API_KEY);
-	            	
-	            	actionsMenu(us, input);
+
+	            	actionsMenu(urlS, input);
                 	Thread.sleep(1000);
                 	break;
             	case 3:
             		System.out.println("STARTING: Domain Analysis");
 	            	System.out.print("Input Domain (or press Enter to cancel): ");
 	            	String domain = input.nextLine().strip();
-	            	DomainScan ds = new DomainScan();
+	            	DomainScan domainS = new DomainScan();
+	            	domainS.setName(domain);
 	            	
-	            	if (ds.isValidDomain(domain) ) {
+	            	if (domainS.isValid()) {
 	            		System.out.println("...Getting report");
-		            	ds.GETReport(API_KEY, domain);
-		            	System.out.println("...Saving");
-		            	ds.toCSVReport();
+		            	domainS.GETReport(API_KEY, domain);
 	            	} else{
-	                	System.out.println("ERROR: Invalid Input...\n");
-	                	Thread.sleep(2000);
-	                	continue;
+	            		System.out.println("ERROR: Invalid Input...\n");
+                    	Thread.sleep(1000);
+                    	break;
 	                }
-	            	break;
+
+	            	actionsMenu(domainS, input);
+                	Thread.sleep(1000);
+                	break;
             	case 4:
             		System.out.println("STARTING: IP Analysis");
 	            	System.out.print("Input IP (or press Enter to cancel): ");
 	            	String ip = input.nextLine().strip();
-	            	IPScan ipScan = new IPScan();
+	            	IPScan ipS = new IPScan();
+	            	ipS.setName(ip);
 	            	
-	            	if (ipScan.isValisIP(ip) ) {
+	            	if (ipS.isValid() ) {
 	            		System.out.println("...Getting report");
-		            	ipScan.GETReport(API_KEY, ip);
-		            	System.out.println("...Saving");
-		            	ipScan.toCSVReport();
+		            	ipS.GETReport(API_KEY, ip);
 	            	} else{
-	                	System.out.println("ERROR: Invalid Input...\n");
-	                	Thread.sleep(2000);
-	                	continue;
+	            		System.out.println("ERROR: Invalid Input...\n");
+                    	Thread.sleep(1000);
+                    	break;
 	                }
-	            	break;
+	            	
+	            	actionsMenu(ipS, input);
+                	Thread.sleep(1000);
+                	break;
             	case 0:
             		System.out.println("Good bye!");
             		System.exit(0);

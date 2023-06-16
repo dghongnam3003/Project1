@@ -16,12 +16,15 @@ public class IPScan extends Scan {
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$"; 
-	
 	private static final Pattern pattern = Pattern.compile(IP_ADDRESS_PATTERN);
-	
-	public static boolean isValisIP(String ipAddress) {
-		Matcher matcher = pattern.matcher(ipAddress);
-		return matcher.matches();
+	@Override
+	public boolean isValid() {
+		Matcher matcher = pattern.matcher(getName());
+		if (matcher.matches())
+			return true;
+		else
+			setName(null);
+		return false;
 	}
 	
 	//get IP report
@@ -45,10 +48,16 @@ public class IPScan extends Scan {
 			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
 			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
 			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
-		} catch (org.json.JSONException e) {
-			System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
-	        return;
-		}
+			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
+			
+			printSummary();
+		} catch (Exception e) {
+			try {
+		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+			} catch (Exception ee) {
+				System.out.println("ERROR: " + e.getMessage());
+			}
+	    }
 	}
 	
 	//print the result and dump to csv file
@@ -82,7 +91,11 @@ public class IPScan extends Scan {
 	        writer.write(sb.toString());
 		} catch (IOException e) {
 			System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
-		}
-		
+		}	
+	}
+	
+	@Override
+	public void POST(String apikey) throws IOException, InterruptedException {
+		return;
 	}
 }

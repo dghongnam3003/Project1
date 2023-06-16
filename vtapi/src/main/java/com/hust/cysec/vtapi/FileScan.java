@@ -29,7 +29,7 @@ public class FileScan extends Scan {
 	
 	@Override
 	public void POST (String apikey) throws IOException, InterruptedException {
-		if (!isImported())
+		if (!isValid())
 			return;
     	Path localFile = Paths.get(filepath);
     	String uploadURL = GETUploadURL(apikey);
@@ -203,6 +203,15 @@ public class FileScan extends Scan {
 	    }
 		return null;
 	}
+	
+	@Override
+	public boolean isValid() {
+		if(this.filepath == null) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 
 	public String getFilepath() {
 		return filepath;
@@ -223,13 +232,6 @@ public class FileScan extends Scan {
 	
 	public long getSize() {
 		return size;
-	}
-	public boolean isImported() {
-		if(this.filepath == null) {
-			return false;
-		} else {
-			return true;
-		}
 	}
 	
     public static BodyPublisher ofMimeMultipartData(Map<Object, Object> data,

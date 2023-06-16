@@ -13,12 +13,15 @@ import java.util.regex.*;
 public class DomainScan extends Scan {
 	//Domain input validation
 	private static final String DOMAIN_PATTERN = "^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+(?:[a-zA-Z]{2,})$";
-	
 	private static final Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
-	
-	public static boolean isValidDomain(String domain) {
-		Matcher matcher = pattern.matcher(domain);
-		return matcher.matches();
+	@Override
+	public boolean isValid() {
+		Matcher matcher = pattern.matcher(getName());
+		if (matcher.matches())
+			return true;
+		else
+			setName(null);
+		return false;
 	}
 	
 	//get domain report
@@ -42,29 +45,25 @@ public class DomainScan extends Scan {
 			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
 			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
 			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
-		} catch (org.json.JSONException e) {
-			System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
-	        return;
-		}
+			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
+			
+			printSummary();
+		} catch (Exception e) {
+			try {
+		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+			} catch (Exception ee) {
+				System.out.println("ERROR: " + e.getMessage());
+			}
+	    }
 	}
 	
 	//print the result and dump to csv file
 	public void toCSVReport() {
-		System.out.println(">>> DOMAIN REPORT SUMMARY <<<");
-		System.out.println("> Metadata");
-		System.out.println("Domain: " + getName());
-		System.out.println("> Stats");
-		System.out.println("Harmless: " + getHarmless());
-		System.out.println("Malicious: " + getMalicious());
-		System.out.println("Suspicious: " + getSuspicious());
-		System.out.println("Undetected: " + getUndetected());
-		System.out.println("Timeout: " + getTimeout());
-		
 		boolean isNewFile = !new File("domain_report.csv").exists();
 		try (FileWriter writer = new FileWriter("domain_report.csv", true)) {
 	        // Write header
 			if (isNewFile) {
-				writer.write("Domain ,Harmless,Suspicious,Malicious,Undetected,Timeout\n");
+				writer.write("Domain,Harmless,Suspicious,Malicious,Undetected,Timeout\n");
 			}
 
 	        // Write data
@@ -80,5 +79,10 @@ public class DomainScan extends Scan {
 		} catch (IOException e) {
 			System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
 		}
+	}
+	
+	@Override
+	public void POST(String apikey) throws IOException, InterruptedException {
+		return;
 	}
 }

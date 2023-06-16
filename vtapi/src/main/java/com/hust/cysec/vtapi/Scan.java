@@ -42,7 +42,7 @@ public abstract class Scan {
 		System.out.println("\n>>> REPORT SUMMARY <<<");
 		System.out.println("> Info");
 		System.out.println("Name: " + name);
-		System.out.println("ID: " + objectId);
+		if (objectId != null) System.out.println("ID: " + objectId);
 		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
 		System.out.println("Time: " + dateformat.format(Instant.ofEpochSecond(time)));
 		System.out.println("> Analysis stats");
@@ -88,6 +88,12 @@ public abstract class Scan {
 	    } catch (IOException e) {
 	        System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
 	    }
+	}
+	
+	public boolean isValid() {
+		if (this.name == null)
+			return false;
+		return true;
 	}
 
 	
