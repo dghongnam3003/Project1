@@ -13,7 +13,7 @@ public class App
     {
     	int choice;
         do {
-        	System.out.println("***** Java VirusTotal API *****");
+        	System.out.println("***** JAVA VIRUSTOTAL API *****");
             System.out.println("1. File Scan\n2. URL Scan\n3. Domain Analysis\n4. IP Analysis\n0. Exit");
             System.out.println("*******************************");
             System.out.print("> Please choose: ");
@@ -29,7 +29,7 @@ public class App
             	Thread.sleep(1000);
             	continue;
             }
-            
+              
             switch (choice) {
             	case 1:
 	            	System.out.println("STARTING: File Analysis");
@@ -47,18 +47,18 @@ public class App
 	            	}
 	                
 	            	if (fs.isImported()) {
-	            		System.out.println("...Posting");
+	            		System.out.println("...Uploading & Scanning");
 	            		fs.POST(API_KEY);
 	            	} else {
 	            		System.out.println("ERROR: No file imported!\n");
 	            		Thread.sleep(1000);
 	            		break;
 	            	}
-	            	
+
 	            	System.out.println("...Getting report");
             		fs.GETReport(API_KEY);
-            		System.out.println("...Saving");
-            		fs.toCSVReport();
+            		
+            		actionsMenu(fs, input);
             		Thread.sleep(1000);
 	                break;
 
@@ -70,7 +70,7 @@ public class App
                 	URLScan us = new URLScan();
                 	if (!url.isBlank()) {
     	            	us.setName(url);
-    	            	System.out.println("...Posting");
+    	            	System.out.println("...Scanning");
     	            	us.POST(API_KEY);
                 	} else{
                     	System.out.println("ERROR: Invalid Input...\n");
@@ -80,9 +80,8 @@ public class App
                 	
                 	System.out.println("...Getting report");
 	            	us.GETReport(API_KEY);
-	            	System.out.println("...Saving");
-	            	us.toCSVReport();
-                	
+	            	
+	            	actionsMenu(us, input);
                 	Thread.sleep(1000);
                 	break;
             	case 3:
@@ -94,11 +93,63 @@ public class App
 	            	//DomainReport();
 	            	break;
             	case 0:
+            		System.out.println("Good bye!");
             		System.exit(0);
             	default:
             		System.out.println("ERROR: Invalid Input...\n");
                 	Thread.sleep(1000);
+                	break;
             }
         } while (true);
+    }
+    
+    public static void actionsMenu (Scan ss, Scanner keyboard) throws InterruptedException, IOException {
+    	int choice = -1;
+    	String extra = "";
+		if (ss instanceof FileScan || ss instanceof URLScan)
+			extra = "\n4. Re-analysis File/URL";
+    	do {
+    		Thread.sleep(1000);
+    		System.out.println("\n*** OPTIONS ***");
+            System.out.println("1. Save Report to JSON\n2. Save Report to CSV\n3. Display Report summary" + extra +"\n0. Exit to Main menu");
+            System.out.println("***************");
+            System.out.print("> Please choose: ");
+    		
+    		if(keyboard.hasNextInt()) {
+    			choice = keyboard.nextInt();
+         	   	keyboard.nextLine();
+    		}
+            else {
+             	System.out.println("ERROR: Invalid Input...\n");
+             	continue;
+             }
+    		
+    		switch (choice) {
+    		case 1:
+    			System.out.println("...Saving to JSON...");
+    			ss.toJSONReport();
+    			System.out.println("...Saved!");
+    			break;
+    		case 2:
+    			System.out.println("...Saving to CSV...");
+    			ss.toCSVReport();
+    			System.out.println("...Saved!");
+    			break;
+    		case 3:
+    			ss.printSummary();
+    			break;
+    		case 0:
+    			System.out.println("\n\n");
+    			return;
+    		case 4:
+    			if (ss instanceof FileScan || ss instanceof URLScan) {
+    				ss.GETReport(API_KEY);
+        			break;
+    			}
+    		default:
+    			System.out.println("ERROR: Invalid Input...\n");
+             	continue;
+    		}
+    	} while (true);
     }
 }

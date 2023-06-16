@@ -48,7 +48,7 @@ public class URLScan extends Scan {
 		//REANALYSE if already get report before
 		if (getJson() != null) { 
 			HttpRequest rescan = HttpRequest.newBuilder()
-				    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + getObjectId() + "/analyse"))
+				    .uri(URI.create("https://www.virustotal.com/api/v3/urls/" + getObjectId() + "/analyse"))
 				    .header("accept", "application/json")
 				    .header("x-apikey", apikey)
 				    .method("POST", HttpRequest.BodyPublishers.noBody())

@@ -147,6 +147,7 @@ public class FileScan extends Scan {
 		if (this.getObjectId() == null || this.getJson() == null ) {
 			return;
 		}
+		String filename = ("FILE_REPORT_" + getName().replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "_") + "_" + getTime() + ".json");
 		boolean isNewFile = !new File("file_report.csv").exists();
 		try (FileWriter writer = new FileWriter("file_report.csv", true)) {
 	        // Write header

@@ -39,7 +39,7 @@ public abstract class Scan {
 	}
 	
 	public void printSummary() {
-		System.out.println(">>> REPORT SUMMARY <<<");
+		System.out.println("\n>>> REPORT SUMMARY <<<");
 		System.out.println("> Info");
 		System.out.println("Name: " + name);
 		System.out.println("ID: " + objectId);
@@ -54,8 +54,8 @@ public abstract class Scan {
 	}
 	
 	public void toJSONReport() {
-		try (FileWriter out = new FileWriter("REPORT_" + name.replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "_") + "_" + time + ".json")) {
-	        out.write(getJson().toString());
+		try (FileWriter writer = new FileWriter("REPORT_" + name.replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "_") + "_" + time + ".json")) {
+			writer.write(getJson().toString(4));
 		} catch (Exception e) {
 			try {
 		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
