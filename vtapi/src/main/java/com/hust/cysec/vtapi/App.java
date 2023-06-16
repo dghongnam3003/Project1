@@ -87,7 +87,21 @@ public class App
                 	break;
             	case 3:
 	            	System.out.println("STARTING: IP Analysis");
-	            	//IPReport();
+	            	System.out.println("STARTING: IP Analysis");
+	            	System.out.print("Input IP (or press Enter to cancel): ");
+	            	String ip = input.nextLine().strip();
+	            	IPScan ipScan = new IPScan();
+	            	
+	            	if (ipScan.isValisIP(ip) ) {
+	            		System.out.println("...Getting report");
+		            	ipScan.GETReport(API_KEY, ip);
+		            	System.out.println("...Saving");
+		            	ipScan.toCSVReport();
+	            	} else{
+	                	System.out.println("ERROR: Invalid Input...\n");
+	                	Thread.sleep(2000);
+	                	continue;
+	                }
 	            	break;
             	case 4:
 	            	System.out.println("STARTING: Domain Analysis");
