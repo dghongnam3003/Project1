@@ -47,7 +47,7 @@ public class App
                 
             	if (fs.isImported()) {
             		System.out.println("...Posting");
-            		fs.POSTFile(true, API_KEY);
+            		fs.POST(API_KEY);
             		System.out.println("...Getting report");
             		fs.GETReport(API_KEY);
             		System.out.println("...Saving");
@@ -74,8 +74,9 @@ public class App
             	System.out.println("");
             	if (!url.isBlank()) {
 	            	URLScan us = new URLScan();
+	            	us.setName(url);
 	            	System.out.println("...Posting");
-	            	us.POSTUrl(API_KEY, url);
+	            	us.POST(API_KEY);
 	            	System.out.println("...Getting report");
 	            	us.GETReport(API_KEY);
 	            	System.out.println("...Saving");

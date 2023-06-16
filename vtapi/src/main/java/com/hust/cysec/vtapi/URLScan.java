@@ -12,10 +12,11 @@ import org.json.JSONObject;
 public class URLScan extends Scan {
 	
 	//post URL
-	public void POSTUrl(String apikey, String urlStr) throws IOException, InterruptedException {
+	@Override
+	public void POST(String apikey) throws IOException, InterruptedException {
 		HttpClient client = HttpClient.newBuilder().build();
 		
-		String urlElement = "url=" + urlStr;
+		String urlElement = "url=" + getName();
 		HttpRequest request = HttpRequest.newBuilder()
 			    .uri(URI.create("https://www.virustotal.com/api/v3/urls"))
 			    .header("accept", "application/json")
@@ -29,18 +30,44 @@ public class URLScan extends Scan {
 		try {
 			String id = json.getJSONObject("data").getString("id");
 			setAnalysisId(id);
-		} catch (org.json.JSONException e) {
-			System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
-	        return;
-		}
+			setObjectId(id.split("-")[1]);
+		} catch (Exception e) {
+			try {
+		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+			} catch (Exception ee) {
+				System.out.println("ERROR: " + e.getMessage());
+			}
+	    }
 	}
 	
 	//get URL report
+	@Override
 	public void GETReport(String apikey) throws IOException, InterruptedException {
-		if (this.getAnalysisId() == null) return;
+		if (getObjectId() == null) return;
+		
+		//REANALYSE if already get report before
+		if (getJson() != null) { 
+			HttpRequest rescan = HttpRequest.newBuilder()
+				    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + getObjectId() + "/analyse"))
+				    .header("accept", "application/json")
+				    .header("x-apikey", apikey)
+				    .method("POST", HttpRequest.BodyPublishers.noBody())
+				    .build();
+				HttpResponse<String> resp = HttpClient.newHttpClient().send(rescan, HttpResponse.BodyHandlers.ofString());
+				JSONObject temp = new JSONObject(resp.body());
+			try {
+		        this.setAnalysisId(temp.getJSONObject("data").getString("id"));
+			} catch (Exception e) {
+				try {
+			        System.out.println("ERROR: " + temp.getJSONObject("error").getString("message") + " (" + temp.getJSONObject("error").getString("code") + ")");
+				} catch (Exception ee) {
+					System.out.println("ERROR: " + e.getMessage());
+				}
+		    }
+		}
 		
 		HttpRequest request = HttpRequest.newBuilder()
-			    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/" + getAnalysisId()))
+			    .uri(URI.create("https://www.virustotal.com/api/v3/urls/" + getObjectId()))
 			    .header("accept", "application/json")
 			    .header("x-apikey", apikey)
 			    .method("GET", HttpRequest.BodyPublishers.noBody())
@@ -50,42 +77,38 @@ public class URLScan extends Scan {
 		setJson(json);
 		//set attributes
 		try {
-			setName(json.getJSONObject("meta").getJSONObject("url_info").getString("url"));
-			setObjectId(json.getJSONObject("meta").getJSONObject("url_info").getString("id"));
-			setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("harmless"));
-			setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("undetected"));
-			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("malicious"));
-			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("suspicious"));
-			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("stats").getInt("timeout"));
-		} catch (org.json.JSONException e) {
-			System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
-	        return;
-		}
+			setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
+			setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
+			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
+			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
+			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
+			setName(json.getJSONObject("data").getJSONObject("attributes").getString("url"));
+			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
+			
+			printSummary();
+		} catch (Exception e) {
+			try {
+		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+			} catch (Exception ee) {
+				System.out.println("ERROR: " + e.getMessage());
+			}
+	    }
 		
 	}
 	
 	//print the report and dump to csv file
+	@Override
 	public void toCSVReport() {
-		System.out.println(">>> URL REPORT SUMMARY <<<");
 		if (this.getObjectId() == null || getJson() == null) {
 			System.out.println("ERROR: No report found...");
 			return;
 		}
-		System.out.println("> Metadata");
-		System.out.println("URL path: " + getName());
-		System.out.println("URL identifier: " + getObjectId());
-		System.out.println("> Stats");
-		System.out.println("Harmless: " + getHarmless());
-		System.out.println("Malicious: " + getMalicious());
-		System.out.println("Suspicious: " + getSuspicious());
-		System.out.println("Undetected: " + getUndetected());
-		System.out.println("Timeout: " + getTimeout());
 		
 		boolean isNewFile = !new File("url_report.csv").exists();
 		try (FileWriter writer = new FileWriter("url_report.csv", true)) {
 	        // Write header
 			if (isNewFile) {
-				writer.write("URL path,URL identifier,Harmless,Suspicious,Malicious,Undetected,Timeout\n");
+				writer.write("URL,URL ID,Harmless,Suspicious,Malicious,Undetected,Timeout\n");
 			}
 
 	        // Write data

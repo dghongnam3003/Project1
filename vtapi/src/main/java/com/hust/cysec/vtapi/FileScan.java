@@ -27,62 +27,88 @@ public class FileScan extends Scan {
 	private int typeUnsup;
 	private int failure;
 	
-	public void POSTFile (boolean fullupload, String apikey) throws IOException, InterruptedException {
-		// UPDATE OBJECT ID
-		if (fullupload) {
-			//POSTING FILE
-			if (!isImported())
-				return;
-	    	Path localFile = Paths.get(filepath);
-	    	String uploadURL = GETUploadURL(apikey);
-	    	
-	    	HttpClient client = HttpClient.newBuilder().build();
+	@Override
+	public void POST (String apikey) throws IOException, InterruptedException {
+		if (!isImported())
+			return;
+    	Path localFile = Paths.get(filepath);
+    	String uploadURL = GETUploadURL(apikey);
+    	
+    	HttpClient client = HttpClient.newBuilder().build();
 
-	        Map<Object, Object> data = new LinkedHashMap<>();
-	        data.put("file", localFile);
-	        String boundary = "---011000010111000001101001";
+        Map<Object, Object> data = new LinkedHashMap<>();
+        data.put("file", localFile);
+        String boundary = "---011000010111000001101001";
 
-	        HttpRequest request = HttpRequest.newBuilder()
-	            .header("Content-Type", "multipart/form-data;boundary=" + boundary)
-	            .header("x-apikey", apikey).POST(ofMimeMultipartData(data, boundary))
-	            .uri(URI.create(uploadURL)).build();
+        HttpRequest request = HttpRequest.newBuilder()
+            .header("Content-Type", "multipart/form-data;boundary=" + boundary)
+            .header("x-apikey", apikey).POST(ofMimeMultipartData(data, boundary))
+            .uri(URI.create(uploadURL)).build();
 
-	        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-	        JSONObject json = new JSONObject(response.body());
-	        
-	        //UPDATE AnalysisId
-	        try {
-		        this.setAnalysisId(json.getJSONObject("data").getString("id"));
-	        } catch (org.json.JSONException e) {
+        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+        JSONObject json = new JSONObject(response.body());
+        
+        //UPDATE AnalysisId
+        try {
+	        this.setAnalysisId(json.getJSONObject("data").getString("id"));
+        } catch (Exception e) {
+			try {
 		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
-		        return;
-	        }
-	        
-	        // UPDATE ObjectId
-	        if (this.getObjectId() == null) {
-				if (this.getAnalysisId() != null) {
-					HttpRequest req = HttpRequest.newBuilder()
-						    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/" + getAnalysisId()))
-						    .header("accept", "application/json")
-						    .header("x-apikey", apikey)
-						    .method("GET", HttpRequest.BodyPublishers.noBody())
-						    .build();
-						HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
-					JSONObject temp = new JSONObject(resp.body());
+			} catch (Exception ee) {
+				System.out.println("ERROR: " + e.getMessage());
+			}
+	    }
+        
+        // UPDATE ObjectId
+        if (this.getObjectId() == null) {
+			if (this.getAnalysisId() != null) {
+				HttpRequest req = HttpRequest.newBuilder()
+					    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/" + getAnalysisId()))
+					    .header("accept", "application/json")
+					    .header("x-apikey", apikey)
+					    .method("GET", HttpRequest.BodyPublishers.noBody())
+					    .build();
+					HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
+				JSONObject temp = new JSONObject(resp.body());
+				try {
+			        this.setObjectId(temp.getJSONObject("meta").getJSONObject("file_info").getString("sha256"));
+				} catch (Exception e) {
 					try {
-				        this.setObjectId(temp.getJSONObject("meta").getJSONObject("file_info").getString("sha256"));
-			        } catch (org.json.JSONException e) {
-				        System.out.println("ERROR: " + temp.getJSONObject("error").getString("message") + " (" + temp.getJSONObject("error").getString("code") + ")");
-				        return;
-			        }
-				}
+				        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+					} catch (Exception ee) {
+						System.out.println("ERROR: " + e.getMessage());
+					}
+			    }
 			}
 		}
 	}
 	
+	@Override
 	public void GETReport(String apikey) throws IOException, InterruptedException {
-		if (this.getObjectId() == null)
+		if (getObjectId() == null)
 			return;
+		
+		//REANALYSE if already get report before
+		if (getJson() != null) { 
+			HttpRequest rescan = HttpRequest.newBuilder()
+				    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + getObjectId() + "/analyse"))
+				    .header("accept", "application/json")
+				    .header("x-apikey", apikey)
+				    .method("POST", HttpRequest.BodyPublishers.noBody())
+				    .build();
+				HttpResponse<String> resp = HttpClient.newHttpClient().send(rescan, HttpResponse.BodyHandlers.ofString());
+				JSONObject temp = new JSONObject(resp.body());
+			try {
+		        this.setAnalysisId(temp.getJSONObject("data").getString("id"));
+			} catch (Exception e) {
+				try {
+			        System.out.println("ERROR: " + temp.getJSONObject("error").getString("message") + " (" + temp.getJSONObject("error").getString("code") + ")");
+				} catch (Exception ee) {
+					System.out.println("ERROR: " + e.getMessage());
+				}
+		    }
+		}
+		
 		HttpRequest request = HttpRequest.newBuilder()
 			    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + this.getObjectId()))
 			    .header("accept", "application/json")
@@ -96,7 +122,6 @@ public class FileScan extends Scan {
 	    try {
 	        this.sha1 = json.getJSONObject("data").getJSONObject("attributes").getString("sha1");
 	        this.md5 = json.getJSONObject("data").getJSONObject("attributes").getString("md5");
-	        setObjectId(json.getJSONObject("data").getString("id"));
 	        this.size = json.getJSONObject("data").getJSONObject("attributes").getInt("size");
 	        setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
 	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("type-unsupported");
@@ -107,27 +132,17 @@ public class FileScan extends Scan {
 	        setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
 	        setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
 	        
-	        System.out.println("\n>>> FILE REPORT SUMMARY <<<");
-			System.out.println("> Metadata");
-			System.out.println("File name: " + getName());
-			System.out.println("File size: " + size + " bytes");
-			System.out.println("SHA256: " + getObjectId());
-			System.out.println("SHA1: " + sha1);
-			System.out.println("MD5: " + md5);
-			System.out.println("> Stats");
-			System.out.println("Harmless: " + getHarmless());
-			System.out.println("Suspicious: " + getSuspicious());
-			System.out.println("Malicious: " + getMalicious());
-			System.out.println("Undetected: " + getUndetected());
-			System.out.println("Unsupported types: " + typeUnsup);
-			System.out.println("Timeout: " + getTimeout());
-			System.out.println("Failure: " + failure);
-	    } catch (org.json.JSONException e) {
-	        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
-	        return;
+	        printSummary();
+	    } catch (Exception e) {
+			try {
+		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+			} catch (Exception ee) {
+				System.out.println("ERROR: " + e.getMessage());
+			}
 	    }
 	}
 
+	@Override
 	public void toCSVReport() {
 		if (this.getObjectId() == null || this.getJson() == null ) {
 			return;
@@ -178,10 +193,14 @@ public class FileScan extends Scan {
 	        String url = json.getString("data");
 	        System.out.println("(Warning: Uploading file >32MB)");
 	        return url;
-        } catch (org.json.JSONException e) {
-	        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
-	        return "";
-        }
+        } catch (Exception e) {
+			try {
+		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+			} catch (Exception ee) {
+				System.out.println("ERROR: " + e.getMessage());
+			}
+	    }
+		return null;
 	}
 
 	public String getFilepath() {
