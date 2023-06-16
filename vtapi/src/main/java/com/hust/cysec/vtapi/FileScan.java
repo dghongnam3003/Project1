@@ -22,8 +22,6 @@ import org.json.JSONObject;
 public class FileScan extends Scan {
 	private String filepath = null;
 	private long size = -1;
-	private String sha1 = null;
-	private String md5 = null;
 	private int typeUnsup;
 	private int failure;
 	
@@ -120,8 +118,6 @@ public class FileScan extends Scan {
 		this.setJson(json);
 		
 	    try {
-	        this.sha1 = json.getJSONObject("data").getJSONObject("attributes").getString("sha1");
-	        this.md5 = json.getJSONObject("data").getJSONObject("attributes").getString("md5");
 	        this.size = json.getJSONObject("data").getJSONObject("attributes").getInt("size");
 	        setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
 	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("type-unsupported");
@@ -152,7 +148,7 @@ public class FileScan extends Scan {
 		try (FileWriter writer = new FileWriter("file_report.csv", true)) {
 	        // Write header
 			if (isNewFile) {
-				writer.write("Name,Size,SHA256,SHA1,MD5,Harmless,Suspicious,Malicious,Undetected,Unsupported,Timeout,Failure\n");
+				writer.write("Name,Size,SHA256,Harmless,Suspicious,Malicious,Undetected,Unsupported,Timeout,Failure\n");
 			}
 	
 	        // Write CSV
@@ -160,8 +156,6 @@ public class FileScan extends Scan {
 	        sb.append(getName().replace(",", "")).append(",")
 	                .append(size).append(",")
 	                .append(getObjectId()).append(",")
-	                .append(sha1).append(",")
-	                .append(md5).append(",")
 	                .append(getHarmless()).append(",")
 	                .append(getSuspicious()).append(",")
 	                .append(getMalicious()).append(",")
