@@ -65,7 +65,19 @@ public class App
             	break;
             } else if (choice == 3) {
             	System.out.println("STARTING: IP Analysis");
-            	//IPReport();
+            	System.out.print("Input IP (or press Enter to cancel): ");
+            	String ip = input.nextLine().strip();
+            	IPScan ipScan = new IPScan();
+            	if (ipScan.isValisIP(ip) ) {
+            		System.out.println("...Getting report");
+	            	ipScan.GETReport(API_KEY, ip);
+	            	System.out.println("...Saving");
+	            	ipScan.toCSVReport();
+            	} else{
+                	System.out.println("ERROR: Invalid Input...\n");
+                	Thread.sleep(2000);
+                	continue;
+                }
             	break;
             } else if (choice == 4) {
             	System.out.println("STARTING: URL Analysis");
