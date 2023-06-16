@@ -14,7 +14,7 @@ public class App
     	int choice;
         do {
         	System.out.println("***** Java VirusTotal API *****");
-            System.out.println("1. Scan File\n2. Domain Analysis\n3. IP Analysis\n4. URL Analysis");
+            System.out.println("1. File Scan\n2. URL Scan\n3. Domain Analysis\n4. IP Analysis\n0. Exit");
             System.out.println("*******************************");
             System.out.print("> Please choose: ");
             
@@ -24,72 +24,81 @@ public class App
             	   choice = input.nextInt();
             	   input.nextLine();
             }
-            else{
+            else {
             	System.out.println("ERROR: Invalid Input...\n");
             	Thread.sleep(1000);
             	continue;
             }
             
-            if (choice == 1) {
-            	System.out.println("STARTING: File Analysis");
-            	System.out.println("\n>>> CHOOSE FILE <<<");
-            	System.out.println("Press ENTER to Browse Files...");
-            	System.out.print("Or Input filename (in this directory): ");
-            	String filename = input.nextLine().strip();
-            	FileScan fs = new FileScan();
-            	if (filename.isBlank()) {
-                	UploadFile file = new UploadFile();
-                	fs.setFilepath(file.getFile());
-            	} else {
-            		File file = new File(filename);
-            		fs.setFilepath(file);
-            	}
-                
-            	if (fs.isImported()) {
-            		System.out.println("...Posting");
-            		fs.POST(API_KEY);
-            		System.out.println("...Getting report");
+            switch (choice) {
+            	case 1:
+	            	System.out.println("STARTING: File Analysis");
+	            	System.out.println("\n>>> CHOOSE FILE <<<");
+	            	System.out.println("Press ENTER to Browse Files...");
+	            	System.out.print("Or Input filename (in this directory): ");
+	            	String filename = input.nextLine().strip();
+	            	FileScan fs = new FileScan();
+	            	if (filename.isBlank()) {
+	                	UploadFile file = new UploadFile();
+	                	fs.setFilepath(file.getFile());
+	            	} else {
+	            		File file = new File(filename);
+	            		fs.setFilepath(file);
+	            	}
+	                
+	            	if (fs.isImported()) {
+	            		System.out.println("...Posting");
+	            		fs.POST(API_KEY);
+	            	} else {
+	            		System.out.println("ERROR: No file imported!\n");
+	            		Thread.sleep(1000);
+	            		break;
+	            	}
+	            	
+	            	System.out.println("...Getting report");
             		fs.GETReport(API_KEY);
             		System.out.println("...Saving");
             		fs.toCSVReport();
-            	} else {
-            		System.out.println("ERROR: No file imported!\n");
             		Thread.sleep(1000);
-            		continue;
-            	}
-                break;
+	                break;
 
-            } else if (choice == 2) {
-            	System.out.println("STARTING: Domain Analysis");
-            	//DomainReport();
-            	break;
-            } else if (choice == 3) {
-            	System.out.println("STARTING: IP Analysis");
-            	//IPReport();
-            	break;
-            } else if (choice == 4) {
-            	System.out.println("STARTING: URL Analysis");
-            	System.out.print("Input URL (or press Enter to cancel): ");
-            	String url = input.nextLine().strip();
-            	System.out.println("");
-            	if (!url.isBlank()) {
-	            	URLScan us = new URLScan();
-	            	us.setName(url);
-	            	System.out.println("...Posting");
-	            	us.POST(API_KEY);
-	            	System.out.println("...Getting report");
+            	case 2:
+            		System.out.println("STARTING: URL Analysis");
+                	System.out.print("Input URL (or press Enter to cancel): ");
+                	String url = input.nextLine().strip();
+                	System.out.println("");
+                	URLScan us = new URLScan();
+                	if (!url.isBlank()) {
+    	            	us.setName(url);
+    	            	System.out.println("...Posting");
+    	            	us.POST(API_KEY);
+                	} else{
+                    	System.out.println("ERROR: Invalid Input...\n");
+                    	Thread.sleep(1000);
+                    	break;
+                    }
+                	
+                	System.out.println("...Getting report");
 	            	us.GETReport(API_KEY);
 	            	System.out.println("...Saving");
 	            	us.toCSVReport();
-            	} else{
-                	System.out.println("ERROR: Invalid Input...\n");
-                	Thread.sleep(2000);
-                	continue;
-                }
-            	break;
-            } else
-            	System.exit(0);
+                	
+                	Thread.sleep(1000);
+                	break;
+            	case 3:
+	            	System.out.println("STARTING: IP Analysis");
+	            	//IPReport();
+	            	break;
+            	case 4:
+	            	System.out.println("STARTING: Domain Analysis");
+	            	//DomainReport();
+	            	break;
+            	case 0:
+            		System.exit(0);
+            	default:
+            		System.out.println("ERROR: Invalid Input...\n");
+                	Thread.sleep(1000);
+            }
         } while (true);
-        System.exit(0);
     }
 }
