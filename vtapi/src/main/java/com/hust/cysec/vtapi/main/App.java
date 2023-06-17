@@ -48,9 +48,9 @@ public class App
 	                
 	            	if (fileS.isValid()) {
 	            		System.out.println("...Uploading & Scanning");
-	            		fileS.POST(API_KEY);
+	            		fileS.post(API_KEY);
 	            		System.out.println("...Getting report");
-	            		fileS.GETReport(API_KEY);
+	            		fileS.getReport(API_KEY);
 	            	} else {
 	            		System.out.println("ERROR: No file imported!\n");
 	            		Thread.sleep(1000);
@@ -70,9 +70,9 @@ public class App
                 	if (!url.isBlank()) {
     	            	urlS.setName(url);
     	            	System.out.println("...Scanning");
-    	            	urlS.POST(API_KEY);
+    	            	urlS.post(API_KEY);
     	            	System.out.println("...Getting report");
-    	            	urlS.GETReport(API_KEY);
+    	            	urlS.getReport(API_KEY);
                 	} else{
                     	System.out.println("ERROR: Invalid Input...\n");
                     	Thread.sleep(1000);
@@ -91,7 +91,7 @@ public class App
 	            	
 	            	if (domainS.isValid()) {
 	            		System.out.println("...Getting report");
-		            	domainS.GETReport(API_KEY, domain);
+		            	domainS.getReport(API_KEY);
 	            	} else{
 	            		System.out.println("ERROR: Invalid Input...\n");
                     	Thread.sleep(1000);
@@ -110,7 +110,7 @@ public class App
 	            	
 	            	if (ipS.isValid() ) {
 	            		System.out.println("...Getting report");
-		            	ipS.GETReport(API_KEY, ip);
+		            	ipS.getReport(API_KEY);
 	            	} else{
 	            		System.out.println("ERROR: Invalid Input...\n");
                     	Thread.sleep(1000);
@@ -155,12 +155,12 @@ public class App
     		switch (choice) {
     		case 1:
     			System.out.println("...Saving to JSON...");
-    			ss.toJSONReport();
+    			ss.toJsonReport();
     			System.out.println("...Saved!");
     			break;
     		case 2:
     			System.out.println("...Saving to CSV...");
-    			ss.toCSVReport();
+    			ss.toCsvReport();
     			System.out.println("...Saved!");
     			break;
     		case 3:
@@ -171,7 +171,7 @@ public class App
     			return;
     		case 4:
     			if (ss instanceof FileScan || ss instanceof URLScan) {
-    				ss.GETReport(API_KEY);
+    				ss.getReport(API_KEY);
         			break;
     			}
     		default:

@@ -26,11 +26,11 @@ public class FileScan extends Scan {
 	private int failure;
 	
 	@Override
-	public void POST (String apikey) throws IOException, InterruptedException {
+	public void post (String apikey) throws IOException, InterruptedException {
 		if (!isValid())
 			return;
     	Path localFile = Paths.get(filepath);
-    	String uploadURL = GETUploadURL(apikey);
+    	String uploadURL = getUploadURL(apikey);
     	
     	HttpClient client = HttpClient.newBuilder().build();
 
@@ -82,7 +82,7 @@ public class FileScan extends Scan {
 	}
 	
 	@Override
-	public void GETReport(String apikey) throws IOException, InterruptedException {
+	public void getReport(String apikey) throws IOException, InterruptedException {
 		if (getObjectId() == null)
 			return;
 		
@@ -139,7 +139,7 @@ public class FileScan extends Scan {
 	}
 
 	@Override
-	public void toCSVReport() {
+	public void toCsvReport() {
 		if (this.getObjectId() == null || this.getJson() == null ) {
 			return;
 		}
@@ -172,7 +172,7 @@ public class FileScan extends Scan {
 
 
 	//Get a URL for uploading files larger than 32MB
-	private String GETUploadURL(String apikey) throws IOException, InterruptedException {
+	private String getUploadURL(String apikey) throws IOException, InterruptedException {
 		if(this.size < 33554432) {
 			return "https://www.virustotal.com/api/v3/files";
 		}

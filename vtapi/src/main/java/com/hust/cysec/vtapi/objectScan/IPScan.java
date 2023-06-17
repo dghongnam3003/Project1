@@ -29,9 +29,10 @@ public class IPScan extends Scan {
 	}
 	
 	//get IP report
-	public void GETReport(String apikey, String ipAddress) throws IOException, InterruptedException {
+	@Override
+	public void getReport(String apikey) throws IOException, InterruptedException {
 		HttpRequest request = HttpRequest.newBuilder()
-			    .uri(URI.create("https://www.virustotal.com/api/v3/ip_addresses/" + ipAddress))
+			    .uri(URI.create("https://www.virustotal.com/api/v3/ip_addresses/" + getName()))
 			    .header("accept", "application/json")
 			    .header("x-apikey", apikey)
 			    .method("GET", HttpRequest.BodyPublishers.noBody())
@@ -62,7 +63,7 @@ public class IPScan extends Scan {
 	}
 	
 	//print the result and dump to csv file
-	public void toCSVReport() {
+	public void toCsvReport() {
 		System.out.println(">>> IP ADDRESS REPORT SUMMARY <<<");
 		System.out.println("> Metadata");
 		System.out.println("IP: " + getName());
@@ -96,7 +97,7 @@ public class IPScan extends Scan {
 	}
 	
 	@Override
-	public void POST(String apikey) throws IOException, InterruptedException {
+	public void post(String apikey) throws IOException, InterruptedException {
 		return;
 	}
 }

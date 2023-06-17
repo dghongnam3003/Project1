@@ -26,9 +26,10 @@ public class DomainScan extends Scan {
 	}
 	
 	//get domain report
-	public void GETReport(String apikey, String domain) throws IOException, InterruptedException {
+	@Override
+	public void getReport(String apikey) throws IOException, InterruptedException {
 		HttpRequest request = HttpRequest.newBuilder()
-			    .uri(URI.create("https://www.virustotal.com/api/v3/domains/" + domain))
+			    .uri(URI.create("https://www.virustotal.com/api/v3/domains/" + getName()))
 			    .header("accept", "application/json")
 			    .header("x-apikey", apikey)
 			    .method("GET", HttpRequest.BodyPublishers.noBody())
@@ -59,7 +60,7 @@ public class DomainScan extends Scan {
 	}
 	
 	//print the result and dump to csv file
-	public void toCSVReport() {
+	public void toCsvReport() {
 		boolean isNewFile = !new File("domain_report.csv").exists();
 		try (FileWriter writer = new FileWriter("domain_report.csv", true)) {
 	        // Write header
@@ -83,7 +84,7 @@ public class DomainScan extends Scan {
 	}
 	
 	@Override
-	public void POST(String apikey) throws IOException, InterruptedException {
+	public void post(String apikey) throws IOException, InterruptedException {
 		return;
 	}
 }

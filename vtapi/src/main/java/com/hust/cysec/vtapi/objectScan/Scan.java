@@ -21,13 +21,13 @@ public abstract class Scan {
 	private long time;
 	private JSONObject json = null;
 	
-	public void POST(String apikey) throws IOException, InterruptedException {
+	public void post(String apikey) throws IOException, InterruptedException {
 		//POST info and save report IDs
 		objectId = null;
 		analysisId = null;
 	}
 	
-	public void GETReport(String apikey) throws IOException, InterruptedException {
+	public void getReport(String apikey) throws IOException, InterruptedException {
 		//GET json report and save json + summary stats
 		json = null;
 		harmless = 0;
@@ -53,7 +53,7 @@ public abstract class Scan {
 		System.out.println("Timeout: " + timeout);
 	}
 	
-	public void toJSONReport() {
+	public void toJsonReport() {
 		try (FileWriter writer = new FileWriter("REPORT_" + name.replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "_") + "_" + time + ".json")) {
 			writer.write(getJson().toString(4));
 		} catch (Exception e) {
@@ -65,7 +65,7 @@ public abstract class Scan {
 	    }
 	}
 	
-	public void toCSVReport() {
+	public void toCsvReport() {
 		System.out.println(">>> REPORT SUMMARY <<<");
 		if (this.getObjectId() == null || getJson() == null) {
 			System.out.println("ERROR: No report found...");

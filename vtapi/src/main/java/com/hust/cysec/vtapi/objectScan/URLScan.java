@@ -13,7 +13,7 @@ public class URLScan extends Scan {
 	
 	//post URL
 	@Override
-	public void POST(String apikey) throws IOException, InterruptedException {
+	public void post(String apikey) throws IOException, InterruptedException {
 		HttpClient client = HttpClient.newBuilder().build();
 		
 		String urlElement = "url=" + getName();
@@ -42,7 +42,7 @@ public class URLScan extends Scan {
 	
 	//get URL report
 	@Override
-	public void GETReport(String apikey) throws IOException, InterruptedException {
+	public void getReport(String apikey) throws IOException, InterruptedException {
 		if (getObjectId() == null) return;
 		
 		//REANALYSE if already get report before
@@ -98,7 +98,7 @@ public class URLScan extends Scan {
 	
 	//print the report and dump to csv file
 	@Override
-	public void toCSVReport() {
+	public void toCsvReport() {
 		if (this.getObjectId() == null || getJson() == null) {
 			System.out.println("ERROR: No report found...");
 			return;
