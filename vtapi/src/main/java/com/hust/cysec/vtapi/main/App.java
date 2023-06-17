@@ -1,4 +1,5 @@
-package com.hust.cysec.vtapi;
+package com.hust.cysec.vtapi.main;
+import com.hust.cysec.vtapi.objectScan.*;
 // mvn clean compile assembly:single
 
 import java.io.IOException;

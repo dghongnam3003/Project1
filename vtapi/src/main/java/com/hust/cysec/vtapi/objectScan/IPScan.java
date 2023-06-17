@@ -1,4 +1,4 @@
-package com.hust.cysec.vtapi;
+package com.hust.cysec.vtapi.objectScan;
 
 import java.io.FileWriter;
 import java.io.File;
@@ -8,6 +8,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import org.json.JSONObject;
+
 import java.util.regex.*;
 
 public class IPScan extends Scan {

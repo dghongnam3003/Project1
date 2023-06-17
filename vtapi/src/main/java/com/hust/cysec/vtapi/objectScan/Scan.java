@@ -1,4 +1,4 @@
-package com.hust.cysec.vtapi;
+package com.hust.cysec.vtapi.objectScan;
 
 import java.io.File;
 import java.io.FileWriter;
