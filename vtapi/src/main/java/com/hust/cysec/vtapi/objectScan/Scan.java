@@ -1,5 +1,7 @@
 package com.hust.cysec.vtapi.objectScan;
 
+import java.util.*;
+import java.util.List;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -8,6 +10,17 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import org.json.JSONObject;
+
+import org.knowm.xchart.*;
+import org.knowm.xchart.BitmapEncoder.*;
+import org.knowm.xchart.style.Styler.*;
+import org.knowm.xchart.style.PieStyler.*;
+import org.knowm.xchart.style.*;
+
+import java.awt.*;
+
+
+import javax.swing.*;
 
 public abstract class Scan {
 	private String name = null;
@@ -88,6 +101,35 @@ public abstract class Scan {
 	    } catch (IOException e) {
 	        System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
 	    }
+	}
+	
+	public void toChart() throws IOException {
+		System.out.println("Creating Chart");
+		// Create Chart
+	    PieChart chart = new PieChartBuilder().width(800).height(600).title(this.name).theme(ChartTheme.GGPlot2).build();
+
+	    // Customize Chart
+	    chart.getStyler().setLegendVisible(false);
+//	    chart.getStyler().setAnnotationType(AnnotationType.LabelAndPercentage);
+//	    chart.getStyler().setAnnotationDistance(1.15);
+	    chart.getStyler().setPlotContentSize(.7);
+	    chart.getStyler().setStartAngleInDegrees(90);
+
+	    // Series
+	    chart.addSeries("harmless", this.harmless);
+	    chart.addSeries("suspicious", this.suspicious);
+	    chart.addSeries("timeout", this.timeout);
+	    chart.addSeries("malicious", malicious);
+	    chart.addSeries("undetected", this.undetected);
+	    
+	 // Show it
+	    new SwingWrapper<>(chart).displayChart();
+
+	    // Save it
+	    BitmapEncoder.saveBitmap(chart, "./Sample_Chart", BitmapFormat.PNG);
+
+	    // or save it in high-res
+	    BitmapEncoder.saveBitmapWithDPI(chart, "./Sample_Chart_300_DPI", BitmapFormat.PNG, 300);
 	}
 	
 	public boolean isValid() {

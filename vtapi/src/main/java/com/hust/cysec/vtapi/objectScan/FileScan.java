@@ -18,6 +18,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.json.JSONObject;
+import org.knowm.xchart.*;
+import org.knowm.xchart.BitmapEncoder.*;
+import org.knowm.xchart.style.Styler.*;
+import org.knowm.xchart.style.PieStyler.*;
+import org.knowm.xchart.style.*;
 
 public class FileScan extends Scan {
 	private String filepath = null;
@@ -169,7 +174,38 @@ public class FileScan extends Scan {
 	        System.out.printf("ERROR: Failed to write CSV file (%s)\n",e.getMessage());
 	    }
 	}
+	
+	@Override
+	public void toChart() throws IOException {
+		System.out.println("Creating Chart");
+		// Create Chart
+	    PieChart chart = new PieChartBuilder().width(800).height(600).title(this.getName()).theme(ChartTheme.GGPlot2).build();
 
+	    // Customize Chart
+	    chart.getStyler().setLegendVisible(false);
+//	    chart.getStyler().setAnnotationType(AnnotationType.LabelAndPercentage);
+//	    chart.getStyler().setAnnotationDistance(1.15);
+	    chart.getStyler().setPlotContentSize(.7);
+	    chart.getStyler().setStartAngleInDegrees(90);
+
+	    // Series
+	    chart.addSeries("harmless", this.getHarmless());
+	    chart.addSeries("suspicious", this.getSuspicious());
+	    chart.addSeries("timeout", this.getTimeout());
+	    chart.addSeries("malicious", this.getMalicious());
+	    chart.addSeries("undetected", this.getUndetected());
+	    chart.addSeries("unsupported type", this.typeUnsup);
+	    chart.addSeries("failure", this.failure);
+
+	    // Show it
+	    new SwingWrapper<>(chart).displayChart();
+
+	    // Save it
+	    BitmapEncoder.saveBitmap(chart, "./Sample_Chart", BitmapFormat.PNG);
+
+	    // or save it in high-res
+	    BitmapEncoder.saveBitmapWithDPI(chart, "./Sample_Chart_300_DPI", BitmapFormat.PNG, 300);
+	}
 
 	//Get a URL for uploading files larger than 32MB
 	private String getUploadURL(String apikey) throws IOException, InterruptedException {

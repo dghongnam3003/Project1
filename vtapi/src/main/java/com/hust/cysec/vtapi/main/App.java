@@ -139,7 +139,7 @@ public class App
     	do {
     		Thread.sleep(1000);
     		System.out.println("\n*** OPTIONS ***");
-            System.out.println("1. Save Report to JSON\n2. Save Report to CSV\n3. Display Report summary" + extra +"\n0. Exit to Main menu");
+            System.out.println("1. Save Report to JSON\n2. Save Report to CSV\n3. Display Report summary" + extra +"\n5. Create Pie Chart \n0. Exit to Main menu");
             System.out.println("***************");
             System.out.print("> Please choose: ");
     		
@@ -165,6 +165,10 @@ public class App
     			break;
     		case 3:
     			ss.printSummary();
+    			break;
+    		case 5:
+    			ss.toChart();
+    			System.out.println("...Saved!");
     			break;
     		case 0:
     			System.out.println("\n\n");
