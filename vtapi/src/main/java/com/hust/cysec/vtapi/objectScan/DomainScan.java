@@ -15,6 +15,7 @@ public class DomainScan extends Scan {
 	//Domain input validation
 	private static final String DOMAIN_PATTERN = "^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+(?:[a-zA-Z]{2,})$";
 	private static final Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
+	
 	@Override
 	public boolean isValid() {
 		Matcher matcher = pattern.matcher(getName());
@@ -25,9 +26,9 @@ public class DomainScan extends Scan {
 		return false;
 	}
 	
-	//get domain report
 	@Override
 	public void getReport(String apikey) throws IOException, InterruptedException {
+		//GET REPORT req
 		HttpRequest request = HttpRequest.newBuilder()
 			    .uri(URI.create("https://www.virustotal.com/api/v3/domains/" + getName()))
 			    .header("accept", "application/json")
@@ -39,52 +40,28 @@ public class DomainScan extends Scan {
 		JSONObject json = new JSONObject(response.body());
 		setJson(json);
 		
-		//set attributes
+		//SET ATTRIBUTES
 		try {
+			//GET BASIC INFO
 			setName(json.getJSONObject("data").getString("id"));
+			
+			//GET ANALYSIS 
+			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
 			setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
 			setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
 			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
 			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
 			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
-			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
-			
-			printSummary();
 		} catch (Exception e) {
 			try {
 		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 			} catch (Exception ee) {
-				System.out.println("ERROR: " + e.getMessage());
+				//check if analysis not finished
+				if (e.getMessage().equals("JSONObject[\"last_analysis_date\"] not found."))
+					System.out.println("WARNING: No finished analysis found!");
+				else
+					System.out.println("ERROR: " + e.getMessage());
 			}
 	    }
-	}
-	
-	//print the result and dump to csv file
-	public void toCsvReport() {
-		boolean isNewFile = !new File("domain_report.csv").exists();
-		try (FileWriter writer = new FileWriter("domain_report.csv", true)) {
-	        // Write header
-			if (isNewFile) {
-				writer.write("Domain,Harmless,Suspicious,Malicious,Undetected,Timeout\n");
-			}
-
-	        // Write data
-	        StringBuilder sb = new StringBuilder();
-	        sb.append(getName()).append(",")
-	                .append(getHarmless()).append(",")
-	                .append(getSuspicious()).append(",")
-	                .append(getMalicious()).append(",")
-	                .append(getUndetected()).append(",")
-	                .append(getTimeout()).append("\n");
-
-	        writer.write(sb.toString());
-		} catch (IOException e) {
-			System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
-		}
-	}
-	
-	@Override
-	public void post(String apikey) throws IOException, InterruptedException {
-		return;
 	}
 }

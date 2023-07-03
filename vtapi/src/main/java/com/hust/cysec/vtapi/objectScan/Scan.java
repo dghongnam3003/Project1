@@ -1,7 +1,5 @@
 package com.hust.cysec.vtapi.objectScan;
 
-import java.util.*;
-import java.util.List;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,28 +8,19 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import org.json.JSONObject;
-
 import org.knowm.xchart.*;
-import org.knowm.xchart.BitmapEncoder.*;
 import org.knowm.xchart.style.Styler.*;
-import org.knowm.xchart.style.PieStyler.*;
-import org.knowm.xchart.style.*;
-
-import java.awt.*;
-
-
-import javax.swing.*;
 
 public abstract class Scan {
 	private String name = null;
 	private String objectId = null;
 	private String analysisId = null;
-	private int harmless;
-	private int suspicious;
-	private int timeout;
-	private int malicious;
-	private int undetected;
-	private long time;
+	private int harmless =0;
+	private int suspicious =0;
+	private int timeout =0;
+	private int malicious =0;
+	private int undetected =0;
+	private long time = 0;
 	private JSONObject json = null;
 	
 	public void post(String apikey) throws IOException, InterruptedException {
@@ -52,23 +41,33 @@ public abstract class Scan {
 	}
 	
 	public void printSummary() {
-		System.out.println("\n>>> REPORT SUMMARY <<<");
+		System.out.println("\n>>> ANALYSIS SUMMARY <<<");
 		System.out.println("> Info");
 		System.out.println("Name: " + name);
 		if (objectId != null) System.out.println("ID: " + objectId);
+		if (getTime() == 0) {
+			System.out.println("> WARNING: No finished analysis found!\n(Please wait a few seconds and update)");
+			return;
+		}
+		System.out.println("> Analysis Stats");
 		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
 		System.out.println("Time: " + dateformat.format(Instant.ofEpochSecond(time)));
-		System.out.println("> Analysis stats");
-		System.out.println("Harmless: " + harmless);
-		System.out.println("Malicious: " + malicious);
-		System.out.println("Suspicious: " + suspicious);
-		System.out.println("Undetected: " + undetected);
-		System.out.println("Timeout: " + timeout);
+		System.out.println("Harmless:\t" + harmless);
+		System.out.println("Undetected:\t" + undetected);
+		System.out.println("Suspicious:\t" + suspicious);
+		System.out.println("Malicious:\t" + malicious);
+		System.out.println("Timeout:\t" + timeout);
 	}
 	
-	public void toJsonReport() {
-		try (FileWriter writer = new FileWriter("REPORT_" + name.replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "_") + "_" + time + ".json")) {
+	public boolean toJsonReport() {
+		json = getJson();
+		if (json == null) {
+			System.out.println("ERROR: No report found...");
+			return false;
+		}
+		try (FileWriter writer = new FileWriter(genSaveName("report", ".json"))) {
 			writer.write(getJson().toString(4));
+			return true;
 		} catch (Exception e) {
 			try {
 		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
@@ -76,37 +75,25 @@ public abstract class Scan {
 				System.out.println("ERROR: " + e.getMessage());
 			}
 	    }
+		return false;
 	}
 	
-	public void toCsvReport() {
-		System.out.println(">>> REPORT SUMMARY <<<");
+	public void toExcelReport() {
 		if (this.getObjectId() == null || getJson() == null) {
 			System.out.println("ERROR: No report found...");
 			return;
 		}
-		boolean isNewFile = !new File("report.csv").exists();
-		try (FileWriter writer = new FileWriter("report.csv", true)) {
-			if (isNewFile) {
-				writer.write("Name,ID,Harmless,Suspicious,Malicious,Undetected,Timeout\n");
-			}
-	        StringBuilder sb = new StringBuilder();
-	        sb.append(getName()).append(",")
-	                .append(getObjectId()).append(",")
-	                .append(getHarmless()).append(",")
-	                .append(getSuspicious()).append(",")
-	                .append(getMalicious()).append(",")
-	                .append(getUndetected()).append(",")
-	                .append(getTimeout()).append("\n");
-	        writer.write(sb.toString());
-	    } catch (IOException e) {
-	        System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
-	    }
 	}
 	
-	public void toChart() throws IOException {
-		System.out.println("Creating Chart");
+	public PieChart toChart() throws IOException {
+		if (getTime() == 0) {
+			System.out.println("WARNING: No finished analysis found!\n(Please wait a few seconds and update)");
+			return null;
+		}
 		// Create Chart
-	    PieChart chart = new PieChartBuilder().width(800).height(600).title(this.name).theme(ChartTheme.GGPlot2).build();
+		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
+		String short_time = dateformat.format(Instant.ofEpochSecond(time));
+	    PieChart chart = new PieChartBuilder().width(800).height(600).title(this.name + " ("+short_time+")").theme(ChartTheme.GGPlot2).build();
 
 	    // Customize Chart
 	    chart.getStyler().setLegendVisible(false);
@@ -117,27 +104,35 @@ public abstract class Scan {
 
 	    // Series
 	    chart.addSeries("harmless", this.harmless);
-	    chart.addSeries("suspicious", this.suspicious);
-	    chart.addSeries("timeout", this.timeout);
-	    chart.addSeries("malicious", malicious);
 	    chart.addSeries("undetected", this.undetected);
+	    chart.addSeries("suspicious", this.suspicious);
+	    chart.addSeries("malicious", malicious);
+	    chart.addSeries("timeout", this.timeout);
 	    
-	 // Show it
-	    new SwingWrapper<>(chart).displayChart();
-
-	    // Save it
-	    BitmapEncoder.saveBitmap(chart, "./Sample_Chart", BitmapFormat.PNG);
-
-	    // or save it in high-res
-	    BitmapEncoder.saveBitmapWithDPI(chart, "./Sample_Chart_300_DPI", BitmapFormat.PNG, 300);
+		return chart;
 	}
+	
 	
 	public boolean isValid() {
 		if (this.name == null)
 			return false;
 		return true;
 	}
-
+	
+	public String genSaveName(String type) {
+		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm").withZone(ZoneId.systemDefault());
+		String short_time = dateformat.format(Instant.ofEpochSecond(time));
+		String savename = type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "-") + "_" + short_time;
+		return savename;
+	}
+	
+	public String genSaveName(String type, String extension) {
+		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm").withZone(ZoneId.systemDefault());
+		String short_time = dateformat.format(Instant.ofEpochSecond(time));
+		String savename = type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "-") + "_" + short_time + extension;
+		return savename;
+	}
+	
 	
 	public String getName() {
 		return name;
@@ -199,8 +194,4 @@ public abstract class Scan {
 	public void setAnalysisId(String analysisId) {
 		this.analysisId = analysisId;
 	}
-	
-	
-	
-	
 }

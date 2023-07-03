@@ -33,19 +33,22 @@ public class URLScan extends Scan {
 			setObjectId(id.split("-")[1]);
 		} catch (Exception e) {
 			try {
-		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+				if (json.getJSONObject("error").getString("code").equals("InvalidArgumentError"))
+					System.out.println("ERROR: Invalid URL!\n");
+				else
+					System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")\n");
 			} catch (Exception ee) {
 				System.out.println("ERROR: " + e.getMessage());
 			}
 	    }
 	}
 	
-	//get URL report
+
 	@Override
 	public void getReport(String apikey) throws IOException, InterruptedException {
 		if (getObjectId() == null) return;
 		
-		//REANALYSE if already get report before
+		//SEND REANALYSE req if already get report before
 		if (getJson() != null) { 
 			HttpRequest rescan = HttpRequest.newBuilder()
 				    .uri(URI.create("https://www.virustotal.com/api/v3/urls/" + getObjectId() + "/analyse"))
@@ -77,53 +80,31 @@ public class URLScan extends Scan {
 		setJson(json);
 		//set attributes
 		try {
+			//GET BASIC INFO
+			setName(json.getJSONObject("data").getJSONObject("attributes").getString("url"));
+			
+			//GET ANALYSIS
+			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
 			setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
 			setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
 			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
 			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
 			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
-			setName(json.getJSONObject("data").getJSONObject("attributes").getString("url"));
-			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
-			
-			printSummary();
 		} catch (Exception e) {
 			try {
-		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+				//check if analysis not finished
+				if (json.getJSONObject("error").getString("code").equals("NotFoundError"))
+					System.out.println("WARNING: No finished analysis found!");
+				else
+					System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 			} catch (Exception ee) {
-				System.out.println("ERROR: " + e.getMessage());
+				//check if analysis not finished
+				if (e.getMessage().equals("JSONObject[\"last_analysis_date\"] not found."))
+					System.out.println("WARNING: No finished analysis found!");
+				else
+					System.out.println("ERROR: " + e.getMessage());
 			}
 	    }
 		
-	}
-	
-	//print the report and dump to csv file
-	@Override
-	public void toCsvReport() {
-		if (this.getObjectId() == null || getJson() == null) {
-			System.out.println("ERROR: No report found...");
-			return;
-		}
-		
-		boolean isNewFile = !new File("url_report.csv").exists();
-		try (FileWriter writer = new FileWriter("url_report.csv", true)) {
-	        // Write header
-			if (isNewFile) {
-				writer.write("URL,URL ID,Harmless,Suspicious,Malicious,Undetected,Timeout\n");
-			}
-
-	        // Write data
-	        StringBuilder sb = new StringBuilder();
-	        sb.append(getName()).append(",")
-	                .append(getObjectId()).append(",")
-	                .append(getHarmless()).append(",")
-	                .append(getSuspicious()).append(",")
-	                .append(getMalicious()).append(",")
-	                .append(getUndetected()).append(",")
-	                .append(getTimeout()).append("\n");
-
-	        writer.write(sb.toString());
-	    } catch (IOException e) {
-	        System.out.println("ERROR: Failed to write CSV file: " + e.getMessage());
-	    }
 	}
 }

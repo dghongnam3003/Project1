@@ -14,21 +14,20 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.json.JSONObject;
 import org.knowm.xchart.*;
-import org.knowm.xchart.BitmapEncoder.*;
 import org.knowm.xchart.style.Styler.*;
-import org.knowm.xchart.style.PieStyler.*;
-import org.knowm.xchart.style.*;
 
 public class FileScan extends Scan {
 	private String filepath = null;
 	private long size = -1;
 	private int typeUnsup;
-	private int failure;
 	
 	@Override
 	public void post (String apikey) throws IOException, InterruptedException {
@@ -91,7 +90,7 @@ public class FileScan extends Scan {
 		if (getObjectId() == null)
 			return;
 		
-		//REANALYSE if already get report before
+		//SEND REANALYSE req if already get report before
 		if (getJson() != null) { 
 			HttpRequest rescan = HttpRequest.newBuilder()
 				    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + getObjectId() + "/analyse"))
@@ -112,6 +111,7 @@ public class FileScan extends Scan {
 		    }
 		}
 		
+		//GET REPORT req
 		HttpRequest request = HttpRequest.newBuilder()
 			    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + this.getObjectId()))
 			    .header("accept", "application/json")
@@ -123,63 +123,69 @@ public class FileScan extends Scan {
 		this.setJson(json);
 		
 	    try {
+	    	//GET BASIC INFO
 	        this.size = json.getJSONObject("data").getJSONObject("attributes").getInt("size");
+	        if (getObjectId().matches("[a-fA-F0-9]{40}") || getObjectId().matches("[a-fA-F0-9]{32}"))
+	        	setObjectId(json.getJSONObject("data").getString("id"));
+	        if (getName() == null)
+	        	setName(json.getJSONObject("data").getJSONObject("attributes").getString("meaningful_name"));
+	        
+	        //GET ANALYSIS 
+	        setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
 	        setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
-	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("type-unsupported");
+	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("type-unsupported") + json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("failure");
 	        setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
-	        setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
-	        this.failure = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("failure");
+	        setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout") + json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("confirmed-timeout"));
 	        setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
 	        setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
-	        setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
-	        
-	        printSummary();
 	    } catch (Exception e) {
 			try {
+				//check if invalid md5/sha1/sha256 lookup
+				if (json.getJSONObject("error").getString("code").equalsIgnoreCase("NotFoundError")) {
+					this.setJson(null);
+					return;
+				}
 		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 			} catch (Exception ee) {
-				System.out.println("ERROR: " + e.getMessage());
+				//check if analysis not finished
+				if (e.getMessage().equals("JSONObject[\"last_analysis_date\"] not found."))
+					System.out.println("WARNING: No finished analysis found!");
+				else
+					System.out.println("ERROR: " + e.getMessage());
 			}
 	    }
 	}
 
 	@Override
-	public void toCsvReport() {
-		if (this.getObjectId() == null || this.getJson() == null ) {
+	public void printSummary() {
+		System.out.println("\n>>> ANALYSIS SUMMARY <<<");
+		System.out.println("> Info");
+		System.out.println("Name: " + getName());
+		if (getObjectId() != null) System.out.println("ID: " + getObjectId());
+		if (getTime() == 0) {
+			System.out.println("> WARNING: No finished analysis found!\n(Please wait a few seconds and update)");
 			return;
 		}
-		String filename = ("FILE_REPORT_" + getName().replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "_") + "_" + getTime() + ".json");
-		boolean isNewFile = !new File("file_report.csv").exists();
-		try (FileWriter writer = new FileWriter("file_report.csv", true)) {
-	        // Write header
-			if (isNewFile) {
-				writer.write("Name,Size,SHA256,Harmless,Suspicious,Malicious,Undetected,Unsupported,Timeout,Failure\n");
-			}
-	
-	        // Write CSV
-	        StringBuilder sb = new StringBuilder();
-	        sb.append(getName().replace(",", "")).append(",")
-	                .append(size).append(",")
-	                .append(getObjectId()).append(",")
-	                .append(getHarmless()).append(",")
-	                .append(getSuspicious()).append(",")
-	                .append(getMalicious()).append(",")
-	                .append(getUndetected()).append(",")
-	                .append(typeUnsup).append(",")
-	                .append(getTimeout()).append(",")
-	                .append(failure).append("\n");
-	
-	        writer.write(sb.toString());
-	    } catch (IOException e) {
-	        System.out.printf("ERROR: Failed to write CSV file (%s)\n",e.getMessage());
-	    }
+		System.out.println("> Analysis stats");
+		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+		System.out.println("Time: " + dateformat.format(Instant.ofEpochSecond(getTime())));
+		System.out.println("Harmless:\t" + getHarmless());
+		System.out.println("Undetected:\t" + getUndetected());
+		System.out.println("Suspicious:\t" + getSuspicious());
+		System.out.println("Malicious:\t" + getMalicious());
+		System.out.println("Unsupported:\t" + typeUnsup);
+		System.out.println("Timeout:\t" + getTimeout());
 	}
-	
-	@Override
-	public void toChart() throws IOException {
-		System.out.println("Creating Chart");
+
+	public PieChart toChart() throws IOException {
+		if (getTime() == 0) {
+			System.out.println("WARNING: No finished analysis found!\n(Please wait a few seconds and update)");
+			return null;
+		}
 		// Create Chart
-	    PieChart chart = new PieChartBuilder().width(800).height(600).title(this.getName()).theme(ChartTheme.GGPlot2).build();
+		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
+		String short_time = dateformat.format(Instant.ofEpochSecond(getTime()));
+	    PieChart chart = new PieChartBuilder().width(800).height(600).title(getName() + " ("+short_time+")").theme(ChartTheme.GGPlot2).build();
 
 	    // Customize Chart
 	    chart.getStyler().setLegendVisible(false);
@@ -189,26 +195,18 @@ public class FileScan extends Scan {
 	    chart.getStyler().setStartAngleInDegrees(90);
 
 	    // Series
-	    chart.addSeries("harmless", this.getHarmless());
-	    chart.addSeries("suspicious", this.getSuspicious());
-	    chart.addSeries("timeout", this.getTimeout());
-	    chart.addSeries("malicious", this.getMalicious());
-	    chart.addSeries("undetected", this.getUndetected());
-	    chart.addSeries("unsupported type", this.typeUnsup);
-	    chart.addSeries("failure", this.failure);
-
-	    // Show it
-	    new SwingWrapper<>(chart).displayChart();
-
-	    // Save it
-	    BitmapEncoder.saveBitmap(chart, "./Sample_Chart", BitmapFormat.PNG);
-
-	    // or save it in high-res
-	    BitmapEncoder.saveBitmapWithDPI(chart, "./Sample_Chart_300_DPI", BitmapFormat.PNG, 300);
+	    chart.addSeries("harmless", getHarmless());
+	    chart.addSeries("undetected", getUndetected());
+	    chart.addSeries("suspicious", getSuspicious());
+	    chart.addSeries("malicious", getMalicious());
+	    chart.addSeries("timeout", getTimeout());
+	    chart.addSeries("type-unsupported", typeUnsup);
+	    
+		return chart;
 	}
 
-	//Get a URL for uploading files larger than 32MB
 	private String getUploadURL(String apikey) throws IOException, InterruptedException {
+		//Get a URL for uploading files larger than 32MB
 		if(this.size < 33554432) {
 			return "https://www.virustotal.com/api/v3/files";
 		}
@@ -242,7 +240,7 @@ public class FileScan extends Scan {
 			return true;
 		}
 	}
-
+	
 	public String getFilepath() {
 		return filepath;
 	}
@@ -259,7 +257,6 @@ public class FileScan extends Scan {
 			}
 		}
 	}
-	
 	public long getSize() {
 		return size;
 	}
