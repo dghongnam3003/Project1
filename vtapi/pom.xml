@@ -4,7 +4,7 @@
 
   <groupId>com.hust.cybersec</groupId>
   <artifactId>vtapi</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>vtapi</name>
@@ -36,7 +36,7 @@
 	      <configuration>
 	        <archive>
 	          <manifest>
-	            <mainClass>com.hust.cysec.vtapi.App</mainClass>
+	            <mainClass>com.hust.cysec.vtapi.main.App</mainClass>
 	          </manifest>
 	        </archive>
 	        <descriptorRefs>
