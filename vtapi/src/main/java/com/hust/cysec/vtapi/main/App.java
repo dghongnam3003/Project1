@@ -202,6 +202,8 @@ public class App
 	    			if (chart_option == 1) {
 	    				// Show Chart
 	    				JFrame frame = new SwingWrapper<>(chart).displayChart();
+	    				frame.setExtendedState(JFrame.ICONIFIED);
+	    				frame.setExtendedState(JFrame.NORMAL);
 	    				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	    				continue;
 	    			} else if (chart_option == 2) {
@@ -219,16 +221,20 @@ public class App
     			break;
     		case 3:
     			System.out.println("...Saving...");
-    			if (ss.toJsonReport());
+    			if (ss.toJsonReport())
     				System.out.println("...Saved to JSON!");
+    			else
+    				System.out.println("...Save Failed.");
     			break;
     		case 4:
     			System.out.println("...Saving...");
-    			ss.toExcelReport();
-    			System.out.println("...Saved to Excel!");
+    			if(ss.toExcelReport())
+    				System.out.println("...Saved to Excel!");
+    			else
+    				System.out.println("...Save Failed.");
     			break;
     		case 0:
-    			System.out.println("\n\n");
+    			System.out.println("\n");
     			return;
     		case 5:
     			if (ss instanceof FileScan || ss instanceof URLScan) {

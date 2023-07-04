@@ -1,12 +1,20 @@
 package com.hust.cysec.vtapi.objectScan;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONObject;
 import org.knowm.xchart.*;
 import org.knowm.xchart.style.Styler.*;
@@ -44,7 +52,8 @@ public abstract class Scan {
 		System.out.println("\n>>> ANALYSIS SUMMARY <<<");
 		System.out.println("> Info");
 		System.out.println("Name: " + name);
-		if (objectId != null) System.out.println("ID: " + objectId);
+		if (!objectId.equals(name))
+			System.out.println("ID: " + objectId);
 		if (getTime() == 0) {
 			System.out.println("> WARNING: No finished analysis found!\n(Please wait a few seconds and update)");
 			return;
@@ -62,7 +71,7 @@ public abstract class Scan {
 	public boolean toJsonReport() {
 		json = getJson();
 		if (json == null) {
-			System.out.println("ERROR: No report found...");
+			System.out.println("ERROR: No report found.");
 			return false;
 		}
 		try (FileWriter writer = new FileWriter(genSaveName("report", ".json"))) {
@@ -78,9 +87,59 @@ public abstract class Scan {
 		return false;
 	}
 	
-	public void toExcelReport() {
-		if (this.getObjectId() == null || getJson() == null) {
-			System.out.println("ERROR: No report found...");
+	public boolean toExcelReport() {
+		if (getObjectId() == null || getJson() == null) {
+			System.out.println("ERROR: No report found.");
+			return false;
+		}
+		if (getTime() == 0) {
+			System.out.println("WARNING: No finished analysis found!\n(Please wait a few seconds and update)");
+			return false;
+		}
+		String type = null;
+		if (this instanceof FileScan) {
+			type = "FILE";
+		} else if (this instanceof URLScan) {
+			type = "URL";
+		} else if (this instanceof DomainScan) {
+			type = "DOMAIN";
+		} else if (this instanceof IPScan) {
+			type = "IP";
+		} else {
+			System.out.println("ERROR: Unsupported Type");
+			return false;
+		}
+	
+		try {
+			FileInputStream file = new FileInputStream(new File("src\\vt-template.xlsx"));
+			XSSFWorkbook template = new XSSFWorkbook(file);
+			XSSFWorkbook workbook = new XSSFWorkbook(template.getPackage());
+			file.close();
+			XSSFSheet worksheet = workbook.getSheet("DATA");
+			
+			writeExcel(worksheet);
+			XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);
+			List<Integer> sheets = new ArrayList<>(Arrays.asList(4, 3, 2, 1));
+			sheets.remove(Integer.valueOf(workbook.getSheetIndex(type+" SUMMARY")));
+			for (Integer sheet: sheets) {
+				workbook.removeSheetAt(sheet);
+			}
+			
+			FileOutputStream out = new FileOutputStream(new File(genSaveName(type, ".xlsx")));
+			workbook.write(out);
+			template.close();
+			workbook.close();
+			out.close();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	public void writeExcel(XSSFSheet sheet) {
+		if (sheet == null) {
+			System.out.println("ERROR: Can't write anything.");
 			return;
 		}
 	}
@@ -122,17 +181,22 @@ public abstract class Scan {
 	public String genSaveName(String type) {
 		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm").withZone(ZoneId.systemDefault());
 		String short_time = dateformat.format(Instant.ofEpochSecond(time));
-		String savename = type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "-") + "_" + short_time;
+		if (time == 0)
+			short_time = "no-analysis";
+		String savename = type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z -]", "").replaceAll("\\s+", "-") + "_" + short_time;
 		return savename;
 	}
 	
 	public String genSaveName(String type, String extension) {
 		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm").withZone(ZoneId.systemDefault());
 		String short_time = dateformat.format(Instant.ofEpochSecond(time));
-		String savename = type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z ]", "").replaceAll("\\s+", "-") + "_" + short_time + extension;
+		if (!extension.contains("."))
+			extension = "." + extension;
+		if (time == 0)
+			short_time = "no-analysis";
+		String savename = type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z -]", "").replaceAll("\\s+", "-") + "_" + short_time + extension;
 		return savename;
 	}
-	
 	
 	public String getName() {
 		return name;

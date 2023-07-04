@@ -1,6 +1,5 @@
 package com.hust.cysec.vtapi.objectScan;
 
-import java.io.FileWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -18,8 +17,18 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.util.CellUtil;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.knowm.xchart.*;
 import org.knowm.xchart.style.Styler.*;
@@ -133,9 +142,9 @@ public class FileScan extends Scan {
 	        //GET ANALYSIS 
 	        setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
 	        setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
-	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("type-unsupported") + json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("failure");
+	        this.typeUnsup = json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("type-unsupported");
 	        setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
-	        setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout") + json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("confirmed-timeout"));
+	        setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout") + json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("confirmed-timeout") + json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("failure"));
 	        setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
 	        setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
 	    } catch (Exception e) {
@@ -175,6 +184,118 @@ public class FileScan extends Scan {
 		System.out.println("Malicious:\t" + getMalicious());
 		System.out.println("Unsupported:\t" + typeUnsup);
 		System.out.println("Timeout:\t" + getTimeout());
+	}
+	
+	@Override
+	public void writeExcel(XSSFSheet sheet) {
+		if (sheet == null) {
+			System.out.println("ERROR: Can't write anything.");
+			return;
+		}
+		
+	//WRITE BASIC INFO
+		Row row = sheet.getRow(1);
+        CellUtil.getCell(row, 0).setCellValue("type");
+        CellUtil.getCell(row, 1).setCellValue("id");
+        CellUtil.getCell(row, 2).setCellValue("name");
+        CellUtil.getCell(row, 9).setCellValue("undetected");
+        CellUtil.getCell(row, 10).setCellValue("harmless");
+        CellUtil.getCell(row, 11).setCellValue("suspicious");
+        CellUtil.getCell(row, 12).setCellValue("malicious");
+        CellUtil.getCell(row, 13).setCellValue("type-unsupported");
+        CellUtil.getCell(row, 14).setCellValue("timeout");
+        CellUtil.getCell(row, 15).setCellValue("last_analysis_date");
+        
+        row = sheet.getRow(2);
+        CellUtil.getCell(row, 0).setCellValue("file");
+        CellUtil.getCell(row, 1).setCellValue(getObjectId());
+        CellUtil.getCell(row, 2).setCellValue(getName());
+        CellUtil.getCell(row, 9).setCellValue(getUndetected());
+        CellUtil.getCell(row, 10).setCellValue(getHarmless());
+        CellUtil.getCell(row, 11).setCellValue(getSuspicious());
+        CellUtil.getCell(row, 12).setCellValue(getMalicious());
+        CellUtil.getCell(row, 13).setCellValue(typeUnsup);
+        CellUtil.getCell(row, 14).setCellValue(getTimeout());
+        CellUtil.getCell(row, 15).setCellValue(getTime());
+        
+   //WRITE ANALYSIS RESULTS
+        row = sheet.getRow(1);
+        CellUtil.getCell(row, 16).setCellValue("engine_name");
+        CellUtil.getCell(row, 17).setCellValue("category");
+        CellUtil.getCell(row, 18).setCellValue("result");
+        
+        List<JSONObject> engines = new ArrayList<>();
+        JSONObject json = getJson().getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_results");
+        Iterator<String> keys = json.keys();
+        while (keys.hasNext()) {
+            JSONObject nestedJsonObject = json.getJSONObject(keys.next());
+            engines.add(nestedJsonObject);
+        }
+        Collections.sort(engines, new Comparator<JSONObject>() {
+            @Override
+            public int compare(JSONObject j1, JSONObject j2) {
+                String name1 = (String) j1.get("engine_name");
+                String name2 = (String) j2.get("engine_name");
+                return name1.compareToIgnoreCase(name2);
+            }
+        });
+        
+        int i_row = 2;
+        for (JSONObject engine: engines) {
+        	row = sheet.getRow(i_row);
+        	if (row == null)
+        		row = sheet.createRow(i_row);
+        	CellUtil.getCell(row, 16).setCellValue(engine.getString("engine_name"));
+            CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
+            try {
+            	CellUtil.getCell(row, 18).setCellValue(engine.getString("result"));
+            } catch (JSONException e) {}
+        	i_row++;
+        }
+        if (i_row < 101) {
+        	row = sheet.getRow(101);
+        	CellUtil.getCell(row, 16).setBlank();
+        }
+        
+    // WRITE OTHER FILE INFOS
+        row = sheet.getRow(1);
+        CellUtil.getCell(row, 3).setCellValue("first_submission_date");
+        CellUtil.getCell(row, 4).setCellValue("last_submission_date");
+        CellUtil.getCell(row, 5).setCellValue("size");
+        CellUtil.getCell(row, 6).setCellValue("type_description");
+        CellUtil.getCell(row, 7).setCellValue("type_tags");
+        CellUtil.getCell(row, 8).setCellValue("alias");
+        CellUtil.getCell(row, 19).setCellValue("reputation");
+        CellUtil.getCell(row, 20).setCellValue("harmless");
+        CellUtil.getCell(row, 21).setCellValue("malicious");
+        CellUtil.getCell(row, 22).setCellValue("magic");
+        
+        json = getJson().getJSONObject("data").getJSONObject("attributes");
+        row = sheet.getRow(2);
+        CellUtil.getCell(row, 3).setCellValue(json.getLong("first_submission_date"));
+        CellUtil.getCell(row, 4).setCellValue(json.getLong("last_submission_date"));
+        CellUtil.getCell(row, 5).setCellValue(size);
+        CellUtil.getCell(row, 6).setCellValue(json.getString("type_description"));
+        CellUtil.getCell(row, 19).setCellValue(json.getInt("reputation"));
+        CellUtil.getCell(row, 20).setCellValue(json.getJSONObject("total_votes").getInt("harmless"));
+        CellUtil.getCell(row, 21).setCellValue(json.getJSONObject("total_votes").getInt("malicious"));
+        CellUtil.getCell(row, 22).setCellValue(json.getString("magic"));
+        //Write File tags
+        JSONArray names = json.getJSONArray("type_tags");
+        i_row = 2;
+        for (int i = 0; i < names.length(); i++) {
+        	row = sheet.getRow(i_row);
+        	CellUtil.getCell(row, 7).setCellValue(names.getString(i));
+        	i_row++;
+        }
+        //Write File alias
+        names = json.getJSONArray("names");
+        i_row = 2;
+        for (int i = 0; i < names.length(); i++) {
+        	row = sheet.getRow(i_row);
+        	CellUtil.getCell(row, 8).setCellValue(names.getString(i));
+        	i_row++;
+        }
 	}
 
 	public PieChart toChart() throws IOException {
