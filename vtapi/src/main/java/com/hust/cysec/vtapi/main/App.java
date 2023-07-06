@@ -21,6 +21,7 @@ public class App
     public static void main( String[] args ) throws IOException, InterruptedException
     {
     	Scanner input = new Scanner(System.in);
+		boolean running = true;
     	int choice;
         do {
         	System.out.println("\n***** JAVA VIRUSTOTAL API *****");
@@ -145,13 +146,15 @@ public class App
                 	break;
             	case 0:
             		System.out.println("Good bye!");
-            		System.exit(0);
+					running = false;
+					break;
             	default:
             		System.out.println("ERROR: Invalid Input.\n");
                 	Thread.sleep(1000);
                 	break;
             }
-        } while (true);
+        } while (running);
+		System.exit(0);
     }
     
     public static void actionsMenu (Scan ss, Scanner keyboard) throws InterruptedException, IOException {
