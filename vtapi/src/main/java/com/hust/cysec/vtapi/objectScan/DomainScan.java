@@ -21,7 +21,7 @@ import java.util.regex.*;
 
 public class DomainScan extends Scan {
 	//Domain input validation
-	private static final String DOMAIN_PATTERN = "(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)++(?:[a-zA-Z]{2,}|[a-zA-Z]{1,}[a-zA-Z0-9-]{1,})$";
+	private static final String DOMAIN_PATTERN = "(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)++(?:[a-zA-Z]{2,}|[a-zA-Z]+[a-zA-Z0-9-]+)$";
 	private static final Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
 	
 	@Override

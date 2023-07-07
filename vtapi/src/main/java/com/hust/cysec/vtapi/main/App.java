@@ -2,10 +2,11 @@ package com.hust.cysec.vtapi.main;
 import com.hust.cysec.vtapi.objectScan.*;
 // mvn clean compile assembly:single
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.*;
 
-import javax.swing.JFrame;
+import javax.swing.*;
 
 import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.PieChart;
@@ -207,9 +208,9 @@ public class App
 	    			if (chart_option == 1) {
 	    				// Show Chart
 	    				JFrame frame = new SwingWrapper<>(chart).displayChart();
-	    				frame.setExtendedState(JFrame.ICONIFIED);
-	    				frame.setExtendedState(JFrame.NORMAL);
-	    				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	    				frame.setExtendedState(java.awt.Frame.ICONIFIED);
+	    				frame.setExtendedState(Frame.NORMAL);
+	    				frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 	    				continue;
 	    			} else if (chart_option == 2) {
 	    				// Save Chart in high-res png
@@ -260,6 +261,7 @@ public class App
     				}
         			break;
     			}
+			break;
     		default:
     			System.out.println(INVALID_INPUT_ER);
              	continue;
