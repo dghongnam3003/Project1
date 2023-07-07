@@ -17,8 +17,8 @@ import java.io.File;
 public class App 
 {
     public static final String API_KEY = "740bce69a223d9434f8c789ce8b432e3e15cbfb4e8bf78b72a6fa41396b8b53a";
-	public static final String invalidInputErr = "ERROR: Invalid Input.\n";
-	public static final String getReportNoti = "...Getting report...";
+	public static final String INVALID_INPUT_ER = "ERROR: Invalid Input.\n";
+	public static final String GET_REPORT_NOTI = "...Getting report...";
     
     public static void main( String[] args ) throws IOException, InterruptedException
     {
@@ -37,7 +37,7 @@ public class App
             }
             else {
             	input.nextLine();
-            	System.out.println(invalidInputErr);
+            	System.out.println(INVALID_INPUT_ER);
             	Thread.sleep(1000);
             	continue;
             }
@@ -74,7 +74,7 @@ public class App
 	            		Thread.sleep(250);
 	            	}
 	            	
-	            	System.out.println(getReportNoti);
+	            	System.out.println(GET_REPORT_NOTI);
             		fileS.getReport(API_KEY);
             		if (fileS.getJson() == null) {
             			System.out.println("ERROR: No file to analyze!\n");
@@ -96,13 +96,13 @@ public class App
     	            	System.out.println("...Scanning...");
     	            	urlS.post(API_KEY);
                 	} else{
-                    	System.out.println(invalidInputErr);
+                    	System.out.println(INVALID_INPUT_ER);
                     	Thread.sleep(1000);
                     	break;
                     }
                 	
                 	if (urlS.getObjectId() != null) {
-                		System.out.println(getReportNoti);
+                		System.out.println(GET_REPORT_NOTI);
     	            	urlS.getReport(API_KEY);
     	            	actionsMenu(urlS, input);
                 	}
@@ -116,10 +116,10 @@ public class App
 	            	domainS.setName(domain);
 	            	
 	            	if (domainS.isValid()) {
-	            		System.out.println(getReportNoti);
+	            		System.out.println(GET_REPORT_NOTI);
 		            	domainS.getReport(API_KEY);
 	            	} else{
-	            		System.out.println(invalidInputErr);
+	            		System.out.println(INVALID_INPUT_ER);
                     	Thread.sleep(1000);
                     	break;
 	                }
@@ -135,7 +135,7 @@ public class App
 	            	ipS.setName(ip);
 	            	
 	            	if (ipS.isValid() ) {
-	            		System.out.println(getReportNoti);
+	            		System.out.println(GET_REPORT_NOTI);
 		            	ipS.getReport(API_KEY);
 	            	} else{
 	            		System.out.println("ERROR: Invalid Input...\n");
@@ -151,7 +151,7 @@ public class App
 					running = false;
 					break;
             	default:
-            		System.out.println(invalidInputErr);
+            		System.out.println(INVALID_INPUT_ER);
                 	Thread.sleep(1000);
                 	break;
             }
@@ -177,7 +177,7 @@ public class App
     		}
             else {
             	keyboard.nextLine();
-             	System.out.println(invalidInputErr);
+             	System.out.println(INVALID_INPUT_ER);
              	continue;
             }
     		
@@ -201,7 +201,7 @@ public class App
 	             	   	keyboard.nextLine();
 	        		} else {
 	        			keyboard.nextLine();
-	                 	System.out.println(invalidInputErr);
+	                 	System.out.println(INVALID_INPUT_ER);
 	                 	continue;
 	                }
 	    			if (chart_option == 1) {
@@ -219,7 +219,7 @@ public class App
 	    			} else if (chart_option == 0) {
 	    			    break;
 	    			} else {
-	    				System.out.println(invalidInputErr);
+	    				System.out.println(INVALID_INPUT_ER);
 	                 	continue;
 	    			}
     			} while (true);
@@ -261,7 +261,7 @@ public class App
         			break;
     			}
     		default:
-    			System.out.println(invalidInputErr);
+    			System.out.println(INVALID_INPUT_ER);
              	continue;
     		}
     	} while (true);
