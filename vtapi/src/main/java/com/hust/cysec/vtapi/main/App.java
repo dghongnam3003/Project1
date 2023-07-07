@@ -1,5 +1,5 @@
 package com.hust.cysec.vtapi.main;
-import com.hust.cysec.vtapi.objectScan.*;
+import com.hust.cysec.vtapi.object_scan.*;
 // mvn clean compile assembly:single
 
 import java.awt.*;
@@ -196,28 +196,28 @@ public class App
     	            System.out.println("1. Show Chart\n2. Save Chart to PNG\n0. Back to Options menu");
     	            System.out.println("***************");
     	            System.out.print("> Please choose: ");
-	    			int chart_option = 0;
+	    			int chartOption = 0;
 	    			if(keyboard.hasNextInt()) {
-	    				chart_option = keyboard.nextInt();
+	    				chartOption = keyboard.nextInt();
 	             	   	keyboard.nextLine();
 	        		} else {
 	        			keyboard.nextLine();
 	                 	System.out.println(INVALID_INPUT_ER);
 	                 	continue;
 	                }
-	    			if (chart_option == 1) {
+	    			if (chartOption == 1) {
 	    				// Show Chart
 	    				JFrame frame = new SwingWrapper<>(chart).displayChart();
 	    				frame.setExtendedState(java.awt.Frame.ICONIFIED);
 	    				frame.setExtendedState(Frame.NORMAL);
 	    				frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 	    				continue;
-	    			} else if (chart_option == 2) {
+	    			} else if (chartOption == 2) {
 	    				// Save Chart in high-res png
 	    			    BitmapEncoder.saveBitmapWithDPI(chart, ss.genSaveName("chart"), BitmapFormat.PNG, 300);
 	    			    System.out.println("...Saved Chart!\n");
 	    			    continue;
-	    			} else if (chart_option == 0) {
+	    			} else if (chartOption == 0) {
 	    			    break;
 	    			} else {
 	    				System.out.println(INVALID_INPUT_ER);

@@ -1,4 +1,4 @@
-package com.hust.cysec.vtapi.objectScan;
+package com.hust.cysec.vtapi.object_scan;
 
 import java.io.IOException;
 import java.net.URI;
@@ -10,88 +10,56 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.*;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.util.CellUtil;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class URLScan extends Scan {
+public class IPScan extends Scan {
+	//IP Address validation
+	private static final String IP_ADDRESS_PATTERN = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$"; 
+	private static final Pattern pattern = Pattern.compile(IP_ADDRESS_PATTERN);
 	
-	//post URL
 	@Override
-	public void post(String apikey) throws IOException, InterruptedException {
-		HttpClient client = HttpClient.newBuilder().build();
-		
-		String urlElement = "url=" + getName();
-		HttpRequest request = HttpRequest.newBuilder()
-			    .uri(URI.create("https://www.virustotal.com/api/v3/urls"))
-			    .header("accept", "application/json")
-			    .header("x-apikey", apikey)
-			    .header("content-type", "application/x-www-form-urlencoded")
-			    .method("POST", HttpRequest.BodyPublishers.ofString(urlElement))
-			    .build();
-		
-		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-		JSONObject json = new JSONObject(response.body());
-		try {
-			String id = json.getJSONObject("data").getString("id");
-			setAnalysisId(id);
-			setObjectId(id.split("-")[1]);
-		} catch (Exception e) {
-			try {
-				if (json.getJSONObject("error").getString("code").equals("InvalidArgumentError"))
-					System.out.println("ERROR: Invalid URL!\n");
-				else
-					System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")\n");
-			} catch (Exception ee) {
-				System.out.println("ERROR: " + e.getMessage());
-			}
-	    }
+	public boolean isValid() {
+		Matcher matcher = pattern.matcher(getName());
+		if (matcher.matches()) {
+			setObjectId(getName());
+			return true;
+		}
+		else
+			setName(null);
+		return false;
 	}
 	
-
 	@Override
 	public void getReport(String apikey) throws IOException, InterruptedException {
 		if (getObjectId() == null)
 			return;
 		
-		//SEND REANALYSE req if already get report before
-		if (getJson() != null) { 
-			HttpRequest rescan = HttpRequest.newBuilder()
-				    .uri(URI.create("https://www.virustotal.com/api/v3/urls/" + getObjectId() + "/analyse"))
-				    .header("accept", "application/json")
-				    .header("x-apikey", apikey)
-				    .method("POST", HttpRequest.BodyPublishers.noBody())
-				    .build();
-				HttpResponse<String> resp = HttpClient.newHttpClient().send(rescan, HttpResponse.BodyHandlers.ofString());
-				JSONObject temp = new JSONObject(resp.body());
-			try {
-		        this.setAnalysisId(temp.getJSONObject("data").getString("id"));
-			} catch (Exception e) {
-				try {
-			        System.out.println("ERROR: " + temp.getJSONObject("error").getString("message") + " (" + temp.getJSONObject("error").getString("code") + ")");
-				} catch (Exception ee) {
-					System.out.println("ERROR: " + e.getMessage());
-				}
-		    }
-		}
-		
+		//GET REPORT req
 		HttpRequest request = HttpRequest.newBuilder()
-			    .uri(URI.create("https://www.virustotal.com/api/v3/urls/" + getObjectId()))
+			    .uri(URI.create("https://www.virustotal.com/api/v3/ip_addresses/" + getObjectId()))
 			    .header("accept", "application/json")
 			    .header("x-apikey", apikey)
 			    .method("GET", HttpRequest.BodyPublishers.noBody())
 			    .build();
 			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+			
 		JSONObject json = new JSONObject(response.body());
 		setJson(json);
-		//set attributes
+		
+		//SET ATTRIBUTES
 		try {
 			//GET BASIC INFO
-			setName(json.getJSONObject("data").getJSONObject("attributes").getString("url"));
+			setName(json.getJSONObject("data").getJSONObject("attributes").getString("network"));
+			setObjectId(json.getJSONObject("data").getString("id"));
 			
 			//GET ANALYSIS
 			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
@@ -102,11 +70,7 @@ public class URLScan extends Scan {
 			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
 		} catch (Exception e) {
 			try {
-				//check if analysis not finished
-				if (json.getJSONObject("error").getString("code").equals("NotFoundError"))
-					System.out.println("WARNING: No finished analysis found!");
-				else
-					System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
 			} catch (Exception ee) {
 				//check if analysis not finished
 				if (e.getMessage().equals("JSONObject[\"last_analysis_date\"] not found."))
@@ -114,7 +78,7 @@ public class URLScan extends Scan {
 				else
 					System.out.println("ERROR: " + e.getMessage());
 			}
-	    }	
+	    }
 	}
 	
 	@Override
@@ -123,7 +87,7 @@ public class URLScan extends Scan {
 			System.out.println("ERROR: Can't write anything.");
 			return;
 		}
-		
+
 	//WRITE BASIC INFO
 		Row row = sheet.getRow(1);
         CellUtil.getCell(row, 0).setCellValue("type");
@@ -135,9 +99,9 @@ public class URLScan extends Scan {
         CellUtil.getCell(row, 12).setCellValue("malicious");
         CellUtil.getCell(row, 13).setCellValue("timeout");
         CellUtil.getCell(row, 15).setCellValue("last_analysis_date");
-        
+
         row = sheet.getRow(2);
-        CellUtil.getCell(row, 0).setCellValue("url");
+        CellUtil.getCell(row, 0).setCellValue("ip");
         CellUtil.getCell(row, 1).setCellValue(getObjectId());
         CellUtil.getCell(row, 2).setCellValue(getName());
         CellUtil.getCell(row, 9).setCellValue(getUndetected());
@@ -146,13 +110,13 @@ public class URLScan extends Scan {
         CellUtil.getCell(row, 12).setCellValue(getMalicious());
         CellUtil.getCell(row, 13).setCellValue(getTimeout());
         CellUtil.getCell(row, 15).setCellValue(getTime());
-        
+
    //WRITE ANALYSIS RESULTS
         row = sheet.getRow(1);
         CellUtil.getCell(row, 16).setCellValue("engine_name");
         CellUtil.getCell(row, 17).setCellValue("category");
         CellUtil.getCell(row, 18).setCellValue("result");
-        
+
         List<JSONObject> engines = new ArrayList<>();
         JSONObject json = getJson().getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_results");
         Iterator<String> keys = json.keys();
@@ -168,7 +132,7 @@ public class URLScan extends Scan {
                 return name1.compareToIgnoreCase(name2);
             }
         });
-        
+
         int i_row = 2;
         for (JSONObject engine: engines) {
         	row = sheet.getRow(i_row);
@@ -185,50 +149,45 @@ public class URLScan extends Scan {
         	row = sheet.getRow(101);
         	CellUtil.getCell(row, 16).setBlank();
         }
-        
-    // WRITE OTHER URL INFOS
+
+    // WRITE OTHER IP INFOS
         row = sheet.getRow(1);
-        CellUtil.getCell(row, 3).setCellValue("first_submission_date");
-        CellUtil.getCell(row, 4).setCellValue("last_submission_date");
-        CellUtil.getCell(row, 5).setCellValue("last_final_url");
-        CellUtil.getCell(row, 8).setCellValue("threat_names");
+        CellUtil.getCell(row, 4).setCellValue("whois_date");
+        CellUtil.getCell(row, 5).setCellValue("country");
+        CellUtil.getCell(row, 6).setCellValue("as_owner");
+        CellUtil.getCell(row, 7).setCellValue("asn");
         CellUtil.getCell(row, 19).setCellValue("reputation");
         CellUtil.getCell(row, 20).setCellValue("harmless");
         CellUtil.getCell(row, 21).setCellValue("malicious");
-        
+
         json = getJson().getJSONObject("data").getJSONObject("attributes");
         row = sheet.getRow(2);
-        CellUtil.getCell(row, 3).setCellValue(json.getLong("first_submission_date"));
-        CellUtil.getCell(row, 4).setCellValue(json.getLong("last_submission_date"));
-        CellUtil.getCell(row, 5).setCellValue(json.getString("last_final_url"));
+        CellUtil.getCell(row, 4).setCellValue(json.getLong("whois_date"));
+        try {CellUtil.getCell(row, 5).setCellValue(json.getString("country"));}
+            catch (Exception e) {CellUtil.getCell(row, 5).setCellValue("Unknown");}
+        CellUtil.getCell(row, 6).setCellValue(json.getString("as_owner"));
+        CellUtil.getCell(row, 7).setCellValue(json.getInt("asn"));
         CellUtil.getCell(row, 19).setCellValue(json.getInt("reputation"));
         CellUtil.getCell(row, 20).setCellValue(json.getJSONObject("total_votes").getInt("harmless"));
         CellUtil.getCell(row, 21).setCellValue(json.getJSONObject("total_votes").getInt("malicious"));
-        //Write URL threat names
-        JSONArray names = json.getJSONArray("threat_names");
-        i_row = 2;
-        for (int i = 0; i < names.length(); i++) {
-        	row = sheet.getRow(i_row);
-        	CellUtil.getCell(row, 8).setCellValue(names.getString(i));
-        	i_row++;
-        }
-    
-    // WRITE CATEGORIES
+
+
+    // WRITE WHOIS
         row = sheet.getRow(1);
-        CellUtil.getCell(row, 6).setCellValue("categorizers");
-        CellUtil.getCell(row, 7).setCellValue("categories");
-        
-        json = getJson().getJSONObject("data").getJSONObject("attributes").getJSONObject("categories");
-        keys = json.keys();
+        CellUtil.getCell(row, 22).setCellValue("whois");
+        String whois = getJson().getJSONObject("data").getJSONObject("attributes").getString("whois");
         i_row = 2;
-        while (keys.hasNext()) {
-            String key = keys.next();
-            row = sheet.getRow(i_row);
-        	if (row == null)
-        		row = sheet.createRow(i_row);
-        	CellUtil.getCell(row, 6).setCellValue(key);
-            CellUtil.getCell(row, 7).setCellValue(json.getString(key));
-        	i_row++;
+        System.out.println(sheet.getLastRowNum());
+        for (String line : whois.split("\n")) {
+        	String[] info = line.split(": ");
+        	row = sheet.getRow(i_row);
+            if (row==null)
+                row = sheet.createRow(i_row);
+        	CellUtil.getCell(row, 22).setCellValue(info[0]);
+            if (info.length >= 2) {
+            	CellUtil.getCell(row, 23).setCellValue(info[1]);
+            }
+            i_row++;
         }
 	}
 }

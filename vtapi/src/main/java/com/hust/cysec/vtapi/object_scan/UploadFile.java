@@ -1,4 +1,4 @@
-package com.hust.cysec.vtapi.objectScan;
+package com.hust.cysec.vtapi.object_scan;
 
 import java.io.File;
 import javax.swing.JFileChooser;
