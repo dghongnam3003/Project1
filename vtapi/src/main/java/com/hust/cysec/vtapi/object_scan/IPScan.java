@@ -25,6 +25,12 @@ public class IPScan extends Scan {
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$"; 
 	private static final Pattern pattern = Pattern.compile(IP_ADDRESS_PATTERN);
+
+    private static final String GET_ATTR = "attributes";
+    private static final String LAST_STATS = "last_analysis_stats";
+    private static final String HARM = "harmless";
+    private static final String MAL = "malicious";
+    private static final String ENGINE = "engine_name";
 	
 	@Override
 	public boolean isValid() {
@@ -58,16 +64,16 @@ public class IPScan extends Scan {
 		//SET ATTRIBUTES
 		try {
 			//GET BASIC INFO
-			setName(json.getJSONObject("data").getJSONObject("attributes").getString("network"));
+			setName(json.getJSONObject("data").getJSONObject(GET_ATTR).getString("network"));
 			setObjectId(json.getJSONObject("data").getString("id"));
 			
 			//GET ANALYSIS
-			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
-			setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
-			setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
-			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
-			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
-			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
+			setTime(json.getJSONObject("data").getJSONObject(GET_ATTR).getInt("last_analysis_date"));
+			setHarmless(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(HARM));
+			setUndetected(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("undetected"));
+			setMalicious(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(MAL));
+			setSuspicious(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("suspicious"));
+			setTimeout(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("timeout"));
 		} catch (Exception e) {
 			try {
 		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
@@ -94,9 +100,9 @@ public class IPScan extends Scan {
         CellUtil.getCell(row, 1).setCellValue("id");
         CellUtil.getCell(row, 2).setCellValue("name");
         CellUtil.getCell(row, 9).setCellValue("undetected");
-        CellUtil.getCell(row, 10).setCellValue("harmless");
+        CellUtil.getCell(row, 10).setCellValue(HARM);
         CellUtil.getCell(row, 11).setCellValue("suspicious");
-        CellUtil.getCell(row, 12).setCellValue("malicious");
+        CellUtil.getCell(row, 12).setCellValue(MAL);
         CellUtil.getCell(row, 13).setCellValue("timeout");
         CellUtil.getCell(row, 15).setCellValue("last_analysis_date");
 
@@ -113,12 +119,12 @@ public class IPScan extends Scan {
 
    //WRITE ANALYSIS RESULTS
         row = sheet.getRow(1);
-        CellUtil.getCell(row, 16).setCellValue("engine_name");
+        CellUtil.getCell(row, 16).setCellValue(ENGINE);
         CellUtil.getCell(row, 17).setCellValue("category");
         CellUtil.getCell(row, 18).setCellValue("result");
 
         List<JSONObject> engines = new ArrayList<>();
-        JSONObject json = getJson().getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_results");
+        JSONObject json = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject("last_analysis_results");
         Iterator<String> keys = json.keys();
         while (keys.hasNext()) {
             JSONObject nestedJsonObject = json.getJSONObject(keys.next());
@@ -127,8 +133,8 @@ public class IPScan extends Scan {
         Collections.sort(engines, new Comparator<JSONObject>() {
             @Override
             public int compare(JSONObject j1, JSONObject j2) {
-                String name1 = (String) j1.get("engine_name");
-                String name2 = (String) j2.get("engine_name");
+                String name1 = (String) j1.get(ENGINE);
+                String name2 = (String) j2.get(ENGINE);
                 return name1.compareToIgnoreCase(name2);
             }
         });
@@ -138,7 +144,7 @@ public class IPScan extends Scan {
         	row = sheet.getRow(i_row);
         	if (row == null)
         		row = sheet.createRow(i_row);
-        	CellUtil.getCell(row, 16).setCellValue(engine.getString("engine_name"));
+        	CellUtil.getCell(row, 16).setCellValue(engine.getString(ENGINE));
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
             try {
             	CellUtil.getCell(row, 18).setCellValue(engine.getString("result"));
@@ -157,10 +163,10 @@ public class IPScan extends Scan {
         CellUtil.getCell(row, 6).setCellValue("as_owner");
         CellUtil.getCell(row, 7).setCellValue("asn");
         CellUtil.getCell(row, 19).setCellValue("reputation");
-        CellUtil.getCell(row, 20).setCellValue("harmless");
-        CellUtil.getCell(row, 21).setCellValue("malicious");
+        CellUtil.getCell(row, 20).setCellValue(HARM);
+        CellUtil.getCell(row, 21).setCellValue(MAL);
 
-        json = getJson().getJSONObject("data").getJSONObject("attributes");
+        json = getJson().getJSONObject("data").getJSONObject(GET_ATTR);
         row = sheet.getRow(2);
         CellUtil.getCell(row, 4).setCellValue(json.getLong("whois_date"));
         try {CellUtil.getCell(row, 5).setCellValue(json.getString("country"));}
@@ -168,14 +174,14 @@ public class IPScan extends Scan {
         CellUtil.getCell(row, 6).setCellValue(json.getString("as_owner"));
         CellUtil.getCell(row, 7).setCellValue(json.getInt("asn"));
         CellUtil.getCell(row, 19).setCellValue(json.getInt("reputation"));
-        CellUtil.getCell(row, 20).setCellValue(json.getJSONObject("total_votes").getInt("harmless"));
-        CellUtil.getCell(row, 21).setCellValue(json.getJSONObject("total_votes").getInt("malicious"));
+        CellUtil.getCell(row, 20).setCellValue(json.getJSONObject("total_votes").getInt(HARM));
+        CellUtil.getCell(row, 21).setCellValue(json.getJSONObject("total_votes").getInt(MAL));
 
 
     // WRITE WHOIS
         row = sheet.getRow(1);
         CellUtil.getCell(row, 22).setCellValue("whois");
-        String whois = getJson().getJSONObject("data").getJSONObject("attributes").getString("whois");
+        String whois = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getString("whois");
         i_row = 2;
         System.out.println(sheet.getLastRowNum());
         for (String line : whois.split("\n")) {

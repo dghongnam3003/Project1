@@ -30,6 +30,8 @@ public abstract class Scan {
 	private int undetected =0;
 	private long time = 0;
 	private JSONObject json = null;
+
+
 	
 	public void post(String apikey) throws IOException, InterruptedException {
 		//POST info and save report IDs

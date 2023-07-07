@@ -22,6 +22,11 @@ import java.util.regex.*;
 public class DomainScan extends Scan {
 	//Domain input validation
 	private static final String DOMAIN_PATTERN = "(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)++(?:[a-zA-Z]{2,}|[a-zA-Z]+[a-zA-Z0-9-]+)$";
+    private static final String GET_ATTR = "attributes";
+    private static final String LAST_STATS = "last_analysis_stats";
+    private static final String HARM = "harmless";
+    private static final String MAL = "malicious";
+    private static final String ENGINE = "engine";
 	private static final Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
 	
 	@Override
@@ -60,12 +65,12 @@ public class DomainScan extends Scan {
 			setObjectId(getName());
 			
 			//GET ANALYSIS 
-			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
-			setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
-			setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
-			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
-			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
-			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
+			setTime(json.getJSONObject("data").getJSONObject(GET_ATTR).getInt("last_analysis_date"));
+			setHarmless(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(HARM));
+			setUndetected(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("undetected"));
+			setMalicious(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(MAL));
+			setSuspicious(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("suspicious"));
+			setTimeout(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("timeout"));
 		} catch (Exception e) {
 			try {
 		        System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
@@ -92,9 +97,9 @@ public class DomainScan extends Scan {
         CellUtil.getCell(row, 1).setCellValue("id");
         CellUtil.getCell(row, 2).setCellValue("name");
         CellUtil.getCell(row, 9).setCellValue("undetected");
-        CellUtil.getCell(row, 10).setCellValue("harmless");
+        CellUtil.getCell(row, 10).setCellValue(HARM);
         CellUtil.getCell(row, 11).setCellValue("suspicious");
-        CellUtil.getCell(row, 12).setCellValue("malicious");
+        CellUtil.getCell(row, 12).setCellValue(MAL);
         CellUtil.getCell(row, 13).setCellValue("timeout");
         CellUtil.getCell(row, 15).setCellValue("last_analysis_date");
         
@@ -111,12 +116,12 @@ public class DomainScan extends Scan {
         
    //WRITE ANALYSIS RESULTS
         row = sheet.getRow(1);
-        CellUtil.getCell(row, 16).setCellValue("engine_name");
+        CellUtil.getCell(row, 16).setCellValue(ENGINE);
         CellUtil.getCell(row, 17).setCellValue("category");
         CellUtil.getCell(row, 18).setCellValue("result");
         
         List<JSONObject> engines = new ArrayList<>();
-        JSONObject json = getJson().getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_results");
+        JSONObject json = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject("last_analysis_results");
         Iterator<String> keys = json.keys();
         while (keys.hasNext()) {
             JSONObject nestedJsonObject = json.getJSONObject(keys.next());
@@ -125,8 +130,8 @@ public class DomainScan extends Scan {
         Collections.sort(engines, new Comparator<JSONObject>() {
             @Override
             public int compare(JSONObject j1, JSONObject j2) {
-                String name1 = (String) j1.get("engine_name");
-                String name2 = (String) j2.get("engine_name");
+                String name1 = (String) j1.get(ENGINE);
+                String name2 = (String) j2.get(ENGINE);
                 return name1.compareToIgnoreCase(name2);
             }
         });
@@ -136,7 +141,7 @@ public class DomainScan extends Scan {
         	row = sheet.getRow(i_row);
         	if (row == null)
         		row = sheet.createRow(i_row);
-        	CellUtil.getCell(row, 16).setCellValue(engine.getString("engine_name"));
+        	CellUtil.getCell(row, 16).setCellValue(engine.getString(ENGINE));
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
             try {
             	CellUtil.getCell(row, 18).setCellValue(engine.getString("result"));
@@ -155,25 +160,25 @@ public class DomainScan extends Scan {
         CellUtil.getCell(row, 5).setCellValue("tld");
         CellUtil.getCell(row, 8).setCellValue("registrar");
         CellUtil.getCell(row, 19).setCellValue("reputation");
-        CellUtil.getCell(row, 20).setCellValue("harmless");
-        CellUtil.getCell(row, 21).setCellValue("malicious");
+        CellUtil.getCell(row, 20).setCellValue(HARM);
+        CellUtil.getCell(row, 21).setCellValue(MAL);
         
-        json = getJson().getJSONObject("data").getJSONObject("attributes");
+        json = getJson().getJSONObject("data").getJSONObject(GET_ATTR);
         row = sheet.getRow(2);
         CellUtil.getCell(row, 3).setCellValue(json.getLong("creation_date"));
         CellUtil.getCell(row, 4).setCellValue(json.getLong("whois_date"));
         CellUtil.getCell(row, 5).setCellValue(json.getString("tld"));
         CellUtil.getCell(row, 8).setCellValue(json.getString("registrar"));
         CellUtil.getCell(row, 19).setCellValue(json.getInt("reputation"));
-        CellUtil.getCell(row, 20).setCellValue(json.getJSONObject("total_votes").getInt("harmless"));
-        CellUtil.getCell(row, 21).setCellValue(json.getJSONObject("total_votes").getInt("malicious"));
+        CellUtil.getCell(row, 20).setCellValue(json.getJSONObject("total_votes").getInt(HARM));
+        CellUtil.getCell(row, 21).setCellValue(json.getJSONObject("total_votes").getInt(MAL));
     
     // WRITE CATEGORIES
         row = sheet.getRow(1);
         CellUtil.getCell(row, 6).setCellValue("categorizers");
         CellUtil.getCell(row, 7).setCellValue("categories");
         
-        json = getJson().getJSONObject("data").getJSONObject("attributes").getJSONObject("categories");
+        json = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject("categories");
         keys = json.keys();
         i_row = 2;
         while (keys.hasNext()) {
@@ -189,7 +194,7 @@ public class DomainScan extends Scan {
     // WRITE WHOIS
         row = sheet.getRow(1);
         CellUtil.getCell(row, 22).setCellValue("whois");
-        String whois = getJson().getJSONObject("data").getJSONObject("attributes").getString("whois");
+        String whois = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getString("whois");
         i_row = 2;
         for (String line : whois.split("\n")) {
         	String[] info = line.split(": ");

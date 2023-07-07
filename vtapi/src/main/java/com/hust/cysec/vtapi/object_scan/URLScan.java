@@ -19,6 +19,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class URLScan extends Scan {
+
+	private static final String ERR = "ERROR: ";
+	private static final String X_API_KEY = "x-apikey";
+	private static final String ERR_ATTR = "error";
+	private static final String ERR_MESS = "message";
+	private static final String GET_ATTR = "attributes";
+	private static final String LAST_STATS = "last_analysis_stats";
+	private static final String HARM = "harmless";
+	private static final String MAL = "malicious";
+	private static final String ENGINE = "engine_name";
 	
 	//post URL
 	@Override
@@ -29,7 +39,7 @@ public class URLScan extends Scan {
 		HttpRequest request = HttpRequest.newBuilder()
 			    .uri(URI.create("https://www.virustotal.com/api/v3/urls"))
 			    .header("accept", "application/json")
-			    .header("x-apikey", apikey)
+			    .header(X_API_KEY, apikey)
 			    .header("content-type", "application/x-www-form-urlencoded")
 			    .method("POST", HttpRequest.BodyPublishers.ofString(urlElement))
 			    .build();
@@ -42,12 +52,12 @@ public class URLScan extends Scan {
 			setObjectId(id.split("-")[1]);
 		} catch (Exception e) {
 			try {
-				if (json.getJSONObject("error").getString("code").equals("InvalidArgumentError"))
+				if (json.getJSONObject(ERR_ATTR).getString("code").equals("InvalidArgumentError"))
 					System.out.println("ERROR: Invalid URL!\n");
 				else
-					System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")\n");
+					System.out.println(ERR + json.getJSONObject(ERR_ATTR).getString(ERR_MESS) + " (" + json.getJSONObject(ERR_ATTR).getString("code") + ")\n");
 			} catch (Exception ee) {
-				System.out.println("ERROR: " + e.getMessage());
+				System.out.println(ERR + e.getMessage());
 			}
 	    }
 	}
@@ -63,7 +73,7 @@ public class URLScan extends Scan {
 			HttpRequest rescan = HttpRequest.newBuilder()
 				    .uri(URI.create("https://www.virustotal.com/api/v3/urls/" + getObjectId() + "/analyse"))
 				    .header("accept", "application/json")
-				    .header("x-apikey", apikey)
+				    .header(X_API_KEY, apikey)
 				    .method("POST", HttpRequest.BodyPublishers.noBody())
 				    .build();
 				HttpResponse<String> resp = HttpClient.newHttpClient().send(rescan, HttpResponse.BodyHandlers.ofString());
@@ -72,9 +82,9 @@ public class URLScan extends Scan {
 		        this.setAnalysisId(temp.getJSONObject("data").getString("id"));
 			} catch (Exception e) {
 				try {
-			        System.out.println("ERROR: " + temp.getJSONObject("error").getString("message") + " (" + temp.getJSONObject("error").getString("code") + ")");
+			        System.out.println(ERR + temp.getJSONObject(ERR_ATTR).getString(ERR_MESS) + " (" + temp.getJSONObject(ERR_ATTR).getString("code") + ")");
 				} catch (Exception ee) {
-					System.out.println("ERROR: " + e.getMessage());
+					System.out.println(ERR + e.getMessage());
 				}
 		    }
 		}
@@ -82,7 +92,7 @@ public class URLScan extends Scan {
 		HttpRequest request = HttpRequest.newBuilder()
 			    .uri(URI.create("https://www.virustotal.com/api/v3/urls/" + getObjectId()))
 			    .header("accept", "application/json")
-			    .header("x-apikey", apikey)
+			    .header(X_API_KEY, apikey)
 			    .method("GET", HttpRequest.BodyPublishers.noBody())
 			    .build();
 			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
@@ -91,28 +101,28 @@ public class URLScan extends Scan {
 		//set attributes
 		try {
 			//GET BASIC INFO
-			setName(json.getJSONObject("data").getJSONObject("attributes").getString("url"));
+			setName(json.getJSONObject("data").getJSONObject(GET_ATTR).getString("url"));
 			
 			//GET ANALYSIS
-			setTime(json.getJSONObject("data").getJSONObject("attributes").getInt("last_analysis_date"));
-			setHarmless(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless"));
-			setUndetected(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("undetected"));
-			setMalicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious"));
-			setSuspicious(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("suspicious"));
-			setTimeout(json.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("timeout"));
+			setTime(json.getJSONObject("data").getJSONObject(GET_ATTR).getInt("last_analysis_date"));
+			setHarmless(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(HARM));
+			setUndetected(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("undetected"));
+			setMalicious(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(MAL));
+			setSuspicious(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("suspicious"));
+			setTimeout(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("timeout"));
 		} catch (Exception e) {
 			try {
 				//check if analysis not finished
-				if (json.getJSONObject("error").getString("code").equals("NotFoundError"))
+				if (json.getJSONObject(ERR_ATTR).getString("code").equals("NotFoundError"))
 					System.out.println("WARNING: No finished analysis found!");
 				else
-					System.out.println("ERROR: " + json.getJSONObject("error").getString("message") + " (" + json.getJSONObject("error").getString("code") + ")");
+					System.out.println(ERR + json.getJSONObject(ERR_ATTR).getString(ERR_MESS) + " (" + json.getJSONObject(ERR_ATTR).getString("code") + ")");
 			} catch (Exception ee) {
 				//check if analysis not finished
 				if (e.getMessage().equals("JSONObject[\"last_analysis_date\"] not found."))
 					System.out.println("WARNING: No finished analysis found!");
 				else
-					System.out.println("ERROR: " + e.getMessage());
+					System.out.println(ERR + e.getMessage());
 			}
 	    }	
 	}
@@ -130,9 +140,9 @@ public class URLScan extends Scan {
         CellUtil.getCell(row, 1).setCellValue("id");
         CellUtil.getCell(row, 2).setCellValue("name");
         CellUtil.getCell(row, 9).setCellValue("undetected");
-        CellUtil.getCell(row, 10).setCellValue("harmless");
+        CellUtil.getCell(row, 10).setCellValue(HARM);
         CellUtil.getCell(row, 11).setCellValue("suspicious");
-        CellUtil.getCell(row, 12).setCellValue("malicious");
+        CellUtil.getCell(row, 12).setCellValue(MAL);
         CellUtil.getCell(row, 13).setCellValue("timeout");
         CellUtil.getCell(row, 15).setCellValue("last_analysis_date");
         
@@ -149,12 +159,12 @@ public class URLScan extends Scan {
         
    //WRITE ANALYSIS RESULTS
         row = sheet.getRow(1);
-        CellUtil.getCell(row, 16).setCellValue("engine_name");
+        CellUtil.getCell(row, 16).setCellValue(ENGINE);
         CellUtil.getCell(row, 17).setCellValue("category");
         CellUtil.getCell(row, 18).setCellValue("result");
         
         List<JSONObject> engines = new ArrayList<>();
-        JSONObject json = getJson().getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_results");
+        JSONObject json = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject("last_analysis_results");
         Iterator<String> keys = json.keys();
         while (keys.hasNext()) {
             JSONObject nestedJsonObject = json.getJSONObject(keys.next());
@@ -163,8 +173,8 @@ public class URLScan extends Scan {
         Collections.sort(engines, new Comparator<JSONObject>() {
             @Override
             public int compare(JSONObject j1, JSONObject j2) {
-                String name1 = (String) j1.get("engine_name");
-                String name2 = (String) j2.get("engine_name");
+                String name1 = (String) j1.get(ENGINE);
+                String name2 = (String) j2.get(ENGINE);
                 return name1.compareToIgnoreCase(name2);
             }
         });
@@ -174,7 +184,7 @@ public class URLScan extends Scan {
         	row = sheet.getRow(i_row);
         	if (row == null)
         		row = sheet.createRow(i_row);
-        	CellUtil.getCell(row, 16).setCellValue(engine.getString("engine_name"));
+        	CellUtil.getCell(row, 16).setCellValue(engine.getString(ENGINE));
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
             try {
             	CellUtil.getCell(row, 18).setCellValue(engine.getString("result"));
@@ -193,17 +203,17 @@ public class URLScan extends Scan {
         CellUtil.getCell(row, 5).setCellValue("last_final_url");
         CellUtil.getCell(row, 8).setCellValue("threat_names");
         CellUtil.getCell(row, 19).setCellValue("reputation");
-        CellUtil.getCell(row, 20).setCellValue("harmless");
-        CellUtil.getCell(row, 21).setCellValue("malicious");
+        CellUtil.getCell(row, 20).setCellValue(HARM);
+        CellUtil.getCell(row, 21).setCellValue(MAL);
         
-        json = getJson().getJSONObject("data").getJSONObject("attributes");
+        json = getJson().getJSONObject("data").getJSONObject(GET_ATTR);
         row = sheet.getRow(2);
         CellUtil.getCell(row, 3).setCellValue(json.getLong("first_submission_date"));
         CellUtil.getCell(row, 4).setCellValue(json.getLong("last_submission_date"));
         CellUtil.getCell(row, 5).setCellValue(json.getString("last_final_url"));
         CellUtil.getCell(row, 19).setCellValue(json.getInt("reputation"));
-        CellUtil.getCell(row, 20).setCellValue(json.getJSONObject("total_votes").getInt("harmless"));
-        CellUtil.getCell(row, 21).setCellValue(json.getJSONObject("total_votes").getInt("malicious"));
+        CellUtil.getCell(row, 20).setCellValue(json.getJSONObject("total_votes").getInt(HARM));
+        CellUtil.getCell(row, 21).setCellValue(json.getJSONObject("total_votes").getInt(MAL));
         //Write URL threat names
         JSONArray names = json.getJSONArray("threat_names");
         i_row = 2;
@@ -218,7 +228,7 @@ public class URLScan extends Scan {
         CellUtil.getCell(row, 6).setCellValue("categorizers");
         CellUtil.getCell(row, 7).setCellValue("categories");
         
-        json = getJson().getJSONObject("data").getJSONObject("attributes").getJSONObject("categories");
+        json = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject("categories");
         keys = json.keys();
         i_row = 2;
         while (keys.hasNext()) {

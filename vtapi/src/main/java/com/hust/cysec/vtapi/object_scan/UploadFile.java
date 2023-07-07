@@ -2,6 +2,7 @@ package com.hust.cysec.vtapi.object_scan;
 
 import java.io.File;
 import javax.swing.JFileChooser;
+import java.awt.Frame;
 
 import javax.swing.JFrame;
 
@@ -26,7 +27,7 @@ public class UploadFile {
     }
 
     private void BringToFront() {                  
-    	frame.setExtendedState(JFrame.ICONIFIED);
-    	frame.setExtendedState(JFrame.NORMAL);
+    	frame.setExtendedState(Frame.ICONIFIED);
+    	frame.setExtendedState(Frame.NORMAL);
     }
 }
