@@ -364,7 +364,7 @@ public class FileScan extends Scan {
 	
 	@Override
 	public boolean isValid() {
-		return !(this.filepath == null);
+		return (this.filepath != null);
 	}
 	
 	public String getFilepath() {

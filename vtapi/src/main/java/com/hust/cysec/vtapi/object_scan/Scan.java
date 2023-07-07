@@ -142,7 +142,6 @@ public abstract class Scan {
 	public void writeExcel(XSSFSheet sheet) {
 		if (sheet == null) {
 			System.out.println("ERROR: Can't write anything.");
-			return;
 		}
 	}
 	
@@ -173,9 +172,7 @@ public abstract class Scan {
 	
 	
 	public boolean isValid() {
-		if (this.name == null)
-			return false;
-		return true;
+		return (this.name!=null);
 	}
 	
 	public String genSaveName(String type) {
