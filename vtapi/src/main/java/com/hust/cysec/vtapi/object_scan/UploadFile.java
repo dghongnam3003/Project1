@@ -12,7 +12,7 @@ public class UploadFile {
     public UploadFile() {
     	frame = new JFrame();
         frame.setVisible(true);
-        BringToFront();
+        bringToFront();
     }
     
     public File getFile() {
@@ -26,7 +26,7 @@ public class UploadFile {
         }
     }
 
-    private void BringToFront() {                  
+    private void bringToFront() {                  
     	frame.setExtendedState(Frame.ICONIFIED);
     	frame.setExtendedState(Frame.NORMAL);
     }

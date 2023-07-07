@@ -249,11 +249,11 @@ public class FileScan extends Scan {
 		});
 
 
-		int i_row = 2;
+		int iRow = 2;
         for (JSONObject engine: engines) {
-        	row = sheet.getRow(i_row);
+        	row = sheet.getRow(iRow);
         	if (row == null)
-        		row = sheet.createRow(i_row);
+        		row = sheet.createRow(iRow);
         	CellUtil.getCell(row, 16).setCellValue(engine.getString(ENGINE));
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
             try {
@@ -261,9 +261,9 @@ public class FileScan extends Scan {
             } catch (JSONException e) {
 				e.printStackTrace();
 			}
-        	i_row++;
+        	iRow++;
         }
-        if (i_row < 101) {
+        if (iRow < 101) {
         	row = sheet.getRow(101);
         	CellUtil.getCell(row, 16).setBlank();
         }
@@ -293,19 +293,19 @@ public class FileScan extends Scan {
         CellUtil.getCell(row, 22).setCellValue(json.getString("magic"));
         //Write File tags
         JSONArray names = json.getJSONArray("type_tags");
-        i_row = 2;
+        iRow = 2;
         for (int i = 0; i < names.length(); i++) {
-        	row = sheet.getRow(i_row);
+        	row = sheet.getRow(iRow);
         	CellUtil.getCell(row, 7).setCellValue(names.getString(i));
-        	i_row++;
+        	iRow++;
         }
         //Write File alias
         names = json.getJSONArray("names");
-        i_row = 2;
+        iRow = 2;
         for (int i = 0; i < names.length(); i++) {
-        	row = sheet.getRow(i_row);
+        	row = sheet.getRow(iRow);
         	CellUtil.getCell(row, 8).setCellValue(names.getString(i));
-        	i_row++;
+        	iRow++;
         }
 	}
 
@@ -316,8 +316,8 @@ public class FileScan extends Scan {
 		}
 		// Create Chart
 		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
-		String short_time = dateformat.format(Instant.ofEpochSecond(getTime()));
-	    PieChart chart = new PieChartBuilder().width(800).height(600).title(getName() + " ("+short_time+")").theme(ChartTheme.GGPlot2).build();
+		String shortTime = dateformat.format(Instant.ofEpochSecond(getTime()));
+	    PieChart chart = new PieChartBuilder().width(800).height(600).title(getName() + " ("+shortTime+")").theme(ChartTheme.GGPlot2).build();
 
 	    // Customize Chart
 	    chart.getStyler().setLegendVisible(false);
@@ -364,11 +364,7 @@ public class FileScan extends Scan {
 	
 	@Override
 	public boolean isValid() {
-		if(this.filepath == null) {
-			return false;
-		} else {
-			return true;
-		}
+		return !(this.filepath == null);
 	}
 	
 	public String getFilepath() {

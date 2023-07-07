@@ -153,8 +153,8 @@ public abstract class Scan {
 		}
 		// Create Chart
 		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
-		String short_time = dateformat.format(Instant.ofEpochSecond(time));
-	    PieChart chart = new PieChartBuilder().width(800).height(600).title(this.name + " ("+short_time+")").theme(ChartTheme.GGPlot2).build();
+		String shortTime = dateformat.format(Instant.ofEpochSecond(time));
+	    PieChart chart = new PieChartBuilder().width(800).height(600).title(this.name + " ("+shortTime+")").theme(ChartTheme.GGPlot2).build();
 
 	    // Customize Chart
 	    chart.getStyler().setLegendVisible(false);
@@ -180,22 +180,20 @@ public abstract class Scan {
 	
 	public String genSaveName(String type) {
 		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm").withZone(ZoneId.systemDefault());
-		String short_time = dateformat.format(Instant.ofEpochSecond(time));
+		String shortTime = dateformat.format(Instant.ofEpochSecond(time));
 		if (time == 0)
-			short_time = "no-analysis";
-		String savename = type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z -]", "").replaceAll("\\s+", "-") + "_" + short_time;
-		return savename;
+			shortTime = "no-analysis";
+		return type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z -]", "").replaceAll("\\s+", "-") + "_" + shortTime;
 	}
 	
 	public String genSaveName(String type, String extension) {
 		DateTimeFormatter dateformat = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm").withZone(ZoneId.systemDefault());
-		String short_time = dateformat.format(Instant.ofEpochSecond(time));
+		String shortTime = dateformat.format(Instant.ofEpochSecond(time));
 		if (!extension.contains("."))
 			extension = "." + extension;
 		if (time == 0)
-			short_time = "no-analysis";
-		String savename = type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z -]", "").replaceAll("\\s+", "-") + "_" + short_time + extension;
-		return savename;
+			shortTime = "no-analysis";
+		return type.toUpperCase() + "_" + name.replace("://", "-").replace(".", "-").replaceAll("[^\\dA-Za-z -]", "").replaceAll("\\s+", "-") + "_" + shortTime + extension;
 	}
 	
 	public String getName() {

@@ -134,11 +134,11 @@ public class DomainScan extends Scan {
         });
 
 
-        int i_row = 2;
+        int iRow = 2;
         for (JSONObject engine: engines) {
-        	row = sheet.getRow(i_row);
+        	row = sheet.getRow(iRow);
         	if (row == null)
-        		row = sheet.createRow(i_row);
+        		row = sheet.createRow(iRow);
         	CellUtil.getCell(row, 16).setCellValue(engine.getString(ENGINE));
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
             try {
@@ -146,9 +146,9 @@ public class DomainScan extends Scan {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-        	i_row++;
+        	iRow++;
         }
-        if (i_row < 101) {
+        if (iRow < 101) {
         	row = sheet.getRow(101);
         	CellUtil.getCell(row, 16).setBlank();
         }
@@ -180,30 +180,30 @@ public class DomainScan extends Scan {
         
         json = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject("categories");
         keys = json.keys();
-        i_row = 2;
+        iRow = 2;
         while (keys.hasNext()) {
             String key = keys.next();
-            row = sheet.getRow(i_row);
+            row = sheet.getRow(iRow);
         	if (row == null)
-        		row = sheet.createRow(i_row);
+        		row = sheet.createRow(iRow);
         	CellUtil.getCell(row, 6).setCellValue(key);
             CellUtil.getCell(row, 7).setCellValue(json.getString(key));
-        	i_row++;
+        	iRow++;
         }
     
     // WRITE WHOIS
         row = sheet.getRow(1);
         CellUtil.getCell(row, 22).setCellValue("whois");
         String whois = getJson().getJSONObject("data").getJSONObject(GET_ATTR).getString("whois");
-        i_row = 2;
+        iRow = 2;
         for (String line : whois.split("\n")) {
         	String[] info = line.split(": ");
-        	row = sheet.getRow(i_row);
+        	row = sheet.getRow(iRow);
         	CellUtil.getCell(row, 22).setCellValue(info[0]);
             if (info.length >= 2) {
             	CellUtil.getCell(row, 23).setCellValue(info[1]);
             }
-            i_row++;
+            iRow++;
         }
 	}
 }
