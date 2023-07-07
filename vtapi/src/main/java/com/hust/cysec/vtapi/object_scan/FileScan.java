@@ -45,7 +45,7 @@ public class FileScan extends Scan {
 	private static final String LAST_STATS = "last_analysis_stats";
 	private static final String HARM = "harmless";
 	private static final String MAL = "malicious";
-	private static final String TYPE_UNSUP = "type_unsupported";
+	private static final String TYPE_UNSUPPORTED = "type-unsupported";
 	private static final String SUSPICIOUS = "suspicious";
 	private static final String TIME_OUT = "timeout";
 	private static final String UNDETECTED = "undetected";
@@ -84,25 +84,23 @@ public class FileScan extends Scan {
 	    }
         
         // UPDATE ObjectId
-        if (this.getObjectId() == null) {
-			if (this.getAnalysisId() != null) {
-				HttpRequest req = HttpRequest.newBuilder()
-					    .uri(URI.create("https://www.virustotal.com/api/v3/analyses/" + getAnalysisId()))
-					    .header("accept", "application/json")
-					    .header(X_API_KEY, apikey)
-					    .method("GET", HttpRequest.BodyPublishers.noBody())
-					    .build();
-					HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
-				JSONObject temp = new JSONObject(resp.body());
+        if (this.getObjectId() == null && this.getAnalysisId() != null) {
+			HttpRequest req = HttpRequest.newBuilder()
+					.uri(URI.create("https://www.virustotal.com/api/v3/analyses/" + getAnalysisId()))
+					.header("accept", "application/json")
+					.header(X_API_KEY, apikey)
+					.method("GET", HttpRequest.BodyPublishers.noBody())
+					.build();
+			HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
+			JSONObject temp = new JSONObject(resp.body());
+			try {
+				this.setObjectId(temp.getJSONObject("meta").getJSONObject("file_info").getString("sha256"));
+			} catch (Exception e) {
 				try {
-			        this.setObjectId(temp.getJSONObject("meta").getJSONObject("file_info").getString("sha256"));
-				} catch (Exception e) {
-					try {
-				        System.out.println(ERR + json.getJSONObject(ERR_ATTR).getString(ERR_MESS) + " (" + json.getJSONObject(ERR_ATTR).getString("code") + ")");
-					} catch (Exception ee) {
-						System.out.println(ERR + e.getMessage());
-					}
-			    }
+					System.out.println(ERR + json.getJSONObject(ERR_ATTR).getString(ERR_MESS) + " (" + json.getJSONObject(ERR_ATTR).getString("code") + ")");
+				} catch (Exception ee) {
+					System.out.println(ERR + e.getMessage());
+				}
 			}
 		}
 	}
@@ -111,9 +109,9 @@ public class FileScan extends Scan {
 	public void getReport(String apikey) throws IOException, InterruptedException {
 		if (getObjectId() == null)
 			return;
-		
+
 		//SEND REANALYSE req if already get report before
-		if (getJson() != null) { 
+		if (getJson() != null) {
 			HttpRequest rescan = HttpRequest.newBuilder()
 				    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + getObjectId() + "/analyse"))
 				    .header("accept", "application/json")
@@ -132,7 +130,7 @@ public class FileScan extends Scan {
 				}
 		    }
 		}
-		
+
 		//GET REPORT req
 		HttpRequest request = HttpRequest.newBuilder()
 			    .uri(URI.create("https://www.virustotal.com/api/v3/files/" + this.getObjectId()))
@@ -143,7 +141,7 @@ public class FileScan extends Scan {
 			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
 		JSONObject json = new JSONObject(response.body());
 		this.setJson(json);
-		
+
 	    try {
 	    	//GET BASIC INFO
 	        this.size = json.getJSONObject("data").getJSONObject(GET_ATTR).getInt("size");
@@ -151,11 +149,11 @@ public class FileScan extends Scan {
 	        	setObjectId(json.getJSONObject("data").getString("id"));
 	        if (getName() == null)
 	        	setName(json.getJSONObject("data").getJSONObject(GET_ATTR).getString("meaningful_name"));
-	        
-	        //GET ANALYSIS 
+
+	        //GET ANALYSIS
 	        setTime(json.getJSONObject("data").getJSONObject(GET_ATTR).getInt("last_analysis_date"));
 	        setHarmless(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(HARM));
-	        this.typeUnsup = json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(TYPE_UNSUP);
+	        this.typeUnsup = json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(TYPE_UNSUPPORTED);
 	        setSuspicious(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(SUSPICIOUS));
 	        setTimeout(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(TIME_OUT) + json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("confirmed-timeout") + json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt("failure"));
 	        setMalicious(json.getJSONObject("data").getJSONObject(GET_ATTR).getJSONObject(LAST_STATS).getInt(MAL));
@@ -215,7 +213,7 @@ public class FileScan extends Scan {
         CellUtil.getCell(row, 10).setCellValue(HARM);
         CellUtil.getCell(row, 11).setCellValue(SUSPICIOUS);
         CellUtil.getCell(row, 12).setCellValue(MAL);
-        CellUtil.getCell(row, 13).setCellValue(TYPE_UNSUP);
+        CellUtil.getCell(row, 13).setCellValue(TYPE_UNSUPPORTED);
         CellUtil.getCell(row, 14).setCellValue(TIME_OUT);
         CellUtil.getCell(row, 15).setCellValue("last_analysis_date");
         
@@ -244,16 +242,14 @@ public class FileScan extends Scan {
             JSONObject nestedJsonObject = json.getJSONObject(keys.next());
             engines.add(nestedJsonObject);
         }
-        Collections.sort(engines, new Comparator<JSONObject>() {
-            @Override
-            public int compare(JSONObject j1, JSONObject j2) {
-                String name1 = (String) j1.get(ENGINE);
-                String name2 = (String) j2.get(ENGINE);
-                return name1.compareToIgnoreCase(name2);
-            }
-        });
-        
-        int i_row = 2;
+		Collections.sort(engines, (j1, j2) -> {
+			String name1 = (String) j1.get(ENGINE);
+			String name2 = (String) j2.get(ENGINE);
+			return name1.compareToIgnoreCase(name2);
+		});
+
+
+		int i_row = 2;
         for (JSONObject engine: engines) {
         	row = sheet.getRow(i_row);
         	if (row == null)
@@ -262,7 +258,9 @@ public class FileScan extends Scan {
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
             try {
             	CellUtil.getCell(row, 18).setCellValue(engine.getString("result"));
-            } catch (JSONException e) {}
+            } catch (JSONException e) {
+				e.printStackTrace();
+			}
         	i_row++;
         }
         if (i_row < 101) {
@@ -323,8 +321,6 @@ public class FileScan extends Scan {
 
 	    // Customize Chart
 	    chart.getStyler().setLegendVisible(false);
-//	    chart.getStyler().setAnnotationType(AnnotationType.LabelAndPercentage);
-//	    chart.getStyler().setAnnotationDistance(1.15);
 	    chart.getStyler().setPlotContentSize(.7);
 	    chart.getStyler().setStartAngleInDegrees(90);
 
@@ -334,7 +330,7 @@ public class FileScan extends Scan {
 	    chart.addSeries(SUSPICIOUS, getSuspicious());
 	    chart.addSeries(MAL, getMalicious());
 	    chart.addSeries(TIME_OUT, getTimeout());
-	    chart.addSeries(TYPE_UNSUP, typeUnsup);
+	    chart.addSeries(TYPE_UNSUPPORTED, typeUnsup);
 	    
 		return chart;
 	}

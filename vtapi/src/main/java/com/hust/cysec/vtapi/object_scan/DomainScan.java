@@ -26,7 +26,7 @@ public class DomainScan extends Scan {
     private static final String LAST_STATS = "last_analysis_stats";
     private static final String HARM = "harmless";
     private static final String MAL = "malicious";
-    private static final String ENGINE = "engine";
+    private static final String ENGINE = "engine_name";
 	private static final Pattern pattern = Pattern.compile(DOMAIN_PATTERN);
 	
 	@Override
@@ -127,15 +127,13 @@ public class DomainScan extends Scan {
             JSONObject nestedJsonObject = json.getJSONObject(keys.next());
             engines.add(nestedJsonObject);
         }
-        Collections.sort(engines, new Comparator<JSONObject>() {
-            @Override
-            public int compare(JSONObject j1, JSONObject j2) {
-                String name1 = (String) j1.get(ENGINE);
-                String name2 = (String) j2.get(ENGINE);
-                return name1.compareToIgnoreCase(name2);
-            }
+        Collections.sort(engines, (j1, j2) -> {
+            String name1 = (String) j1.get(ENGINE);
+            String name2 = (String) j2.get(ENGINE);
+            return name1.compareToIgnoreCase(name2);
         });
-        
+
+
         int i_row = 2;
         for (JSONObject engine: engines) {
         	row = sheet.getRow(i_row);
@@ -145,7 +143,9 @@ public class DomainScan extends Scan {
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
             try {
             	CellUtil.getCell(row, 18).setCellValue(engine.getString("result"));
-            } catch (JSONException e) {}
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         	i_row++;
         }
         if (i_row < 101) {

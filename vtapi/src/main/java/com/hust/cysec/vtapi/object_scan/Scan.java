@@ -158,8 +158,6 @@ public abstract class Scan {
 
 	    // Customize Chart
 	    chart.getStyler().setLegendVisible(false);
-//	    chart.getStyler().setAnnotationType(AnnotationType.LabelAndPercentage);
-//	    chart.getStyler().setAnnotationDistance(1.15);
 	    chart.getStyler().setPlotContentSize(.7);
 	    chart.getStyler().setStartAngleInDegrees(90);
 
