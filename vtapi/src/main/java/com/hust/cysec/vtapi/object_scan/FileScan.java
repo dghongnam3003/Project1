@@ -258,9 +258,7 @@ public class FileScan extends Scan {
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
             try {
             	CellUtil.getCell(row, 18).setCellValue(engine.getString("result"));
-            } catch (JSONException e) {
-				e.printStackTrace();
-			}
+            } catch (JSONException e) {}
         	iRow++;
         }
         if (iRow < 101) {

@@ -133,9 +133,7 @@ public abstract class Scan {
 			workbook.close();
 			out.close();
 			return true;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		} catch (Exception e) {}
 		return false;
 	}
 	
