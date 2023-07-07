@@ -20,7 +20,7 @@ import org.json.JSONObject;
 
 public class IPScan extends Scan {
 	//IP Address validation
-    private static final String IP_ADDRESS_PATTERN = "^((25[0-5]|2[0-4]\\d|[01]?\\d{1,2})\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d{1,2})$";
+    private static final String IP_ADDRESS_PATTERN = "^((2[0-4]\\d|[01]?\\d{1,2})\\.){3}(2[0-4]\\d|[01]?\\d{1,2})$";
 
     private static final Pattern pattern = Pattern.compile(IP_ADDRESS_PATTERN);
 
