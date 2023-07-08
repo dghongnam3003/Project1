@@ -20,6 +20,8 @@ import org.knowm.xchart.*;
 import org.knowm.xchart.style.Styler.*;
 
 public abstract class Scan {
+
+	private static final String ROOT_PATH = new File(System.getProperty("user.dir")).getParent() + "/Project1/vtapi";
 	private String name = null;
 	private String objectId = null;
 	private String analysisId = null;
@@ -76,7 +78,7 @@ public abstract class Scan {
 			System.out.println("ERROR: No report found.");
 			return false;
 		}
-		try (FileWriter writer = new FileWriter(genSaveName("report", ".json"))) {
+		try (FileWriter writer = new FileWriter(ROOT_PATH + "/data/JSON/" + genSaveName("report", ".json"))) {
 			writer.write(getJson().toString(4));
 			return true;
 		} catch (Exception e) {
@@ -113,7 +115,7 @@ public abstract class Scan {
 		}
 	
 		try {
-			FileInputStream file = new FileInputStream(new File(new File(System.getProperty("user.dir")).getParent() + "/Project1/vtapi/src/vt-template.xlsx"));
+			FileInputStream file = new FileInputStream(new File(ROOT_PATH + "/src/vt-template.xlsx"));
 			XSSFWorkbook template = new XSSFWorkbook(file);
 			XSSFWorkbook workbook = new XSSFWorkbook(template.getPackage());
 			file.close();
@@ -127,7 +129,7 @@ public abstract class Scan {
 				workbook.removeSheetAt(sheet);
 			}
 			
-			FileOutputStream out = new FileOutputStream(new File(genSaveName(type, ".xlsx")));
+			FileOutputStream out = new FileOutputStream(new File(ROOT_PATH + "/data/CSV/" + genSaveName(type, ".xlsx")));
 			workbook.write(out);
 			template.close();
 			workbook.close();

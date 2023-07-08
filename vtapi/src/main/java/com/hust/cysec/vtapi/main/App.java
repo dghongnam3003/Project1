@@ -214,7 +214,7 @@ public class App
 	    				continue;
 	    			} else if (chartOption == 2) {
 	    				// Save Chart in high-res png
-	    			    BitmapEncoder.saveBitmapWithDPI(chart, ss.genSaveName("chart"), BitmapFormat.PNG, 300);
+	    			    BitmapEncoder.saveBitmapWithDPI(chart,new File(System.getProperty("user.dir")).getParent() + "/Project1/vtapi/data/PieChart/" + ss.genSaveName("chart"), BitmapFormat.PNG, 300);
 	    			    System.out.println("...Saved Chart!\n");
 	    			    continue;
 	    			} else if (chartOption == 0) {
