@@ -256,9 +256,9 @@ public class FileScan extends Scan {
         		row = sheet.createRow(iRow);
         	CellUtil.getCell(row, 16).setCellValue(engine.getString(ENGINE));
             CellUtil.getCell(row, 17).setCellValue(engine.getString("category"));
-            try {
+            if (engine.isNull("result")) {
             	CellUtil.getCell(row, 18).setCellValue(engine.getString("result"));
-            } catch (JSONException e) {}
+            }
         	iRow++;
         }
         if (iRow < 101) {
