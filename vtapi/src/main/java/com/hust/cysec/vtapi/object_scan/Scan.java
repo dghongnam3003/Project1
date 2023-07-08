@@ -113,7 +113,7 @@ public abstract class Scan {
 		}
 	
 		try {
-			FileInputStream file = new FileInputStream(new File("C:\\Users\\nampr\\OneDrive\\Documents\\java\\Project1\\vtapi\\src\\vt-template.xlsx"));
+			FileInputStream file = new FileInputStream(new File(new File(System.getProperty("user.dir")).getParent() + "/Project1/vtapi/src/vt-template.xlsx"));
 			XSSFWorkbook template = new XSSFWorkbook(file);
 			XSSFWorkbook workbook = new XSSFWorkbook(template.getPackage());
 			file.close();
@@ -133,7 +133,7 @@ public abstract class Scan {
 			workbook.close();
 			out.close();
 			return true;
-		} catch (Exception e) {}
+		} catch (Exception ignored) {}
 		return false;
 	}
 	
