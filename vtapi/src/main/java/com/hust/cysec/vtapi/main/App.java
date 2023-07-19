@@ -18,7 +18,7 @@ import java.io.File;
 
 public class App 
 {
-	public static String apiKey = null;
+	private static String apiKey = null;
 	public static final String INVALID_INPUT_ER = "ERROR: Invalid Input.\n";
 	public static final String GET_REPORT_NOTI = "...Getting report...";
     
@@ -28,7 +28,6 @@ public class App
 		try (FileInputStream inputStream = new FileInputStream(new File(System.getProperty("user.dir")).getParent() + "/Project1/vtapi/src/main/java/com/hust/cysec/vtapi/configs/config.properties")) {
 			properties.load(inputStream);
 			apiKey = properties.getProperty("api.key");
-			System.out.println("API Key: " + apiKey);
 		} catch (IOException e) {
 			System.err.println("Error reading API key: " + e.getMessage());
 		}
