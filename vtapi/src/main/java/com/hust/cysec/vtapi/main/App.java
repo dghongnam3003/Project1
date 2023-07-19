@@ -3,6 +3,7 @@ import com.hust.cysec.vtapi.object_scan.*;
 // mvn clean compile assembly:single
 
 import java.awt.*;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 
@@ -17,13 +18,22 @@ import java.io.File;
 
 public class App 
 {
-    public static final String API_KEY = "740bce69a223d9434f8c789ce8b432e3e15cbfb4e8bf78b72a6fa41396b8b53a";
+	public static String apiKey = null;
 	public static final String INVALID_INPUT_ER = "ERROR: Invalid Input.\n";
 	public static final String GET_REPORT_NOTI = "...Getting report...";
     
     public static void main( String[] args ) throws IOException, InterruptedException
     {
-    	Scanner input = new Scanner(System.in);
+		Properties properties = new Properties();
+		try (FileInputStream inputStream = new FileInputStream(new File(System.getProperty("user.dir")).getParent() + "/Project1/vtapi/src/main/java/com/hust/cysec/vtapi/configs/config.properties")) {
+			properties.load(inputStream);
+			apiKey = properties.getProperty("api.key");
+			System.out.println("API Key: " + apiKey);
+		} catch (IOException e) {
+			System.err.println("Error reading API key: " + e.getMessage());
+		}
+
+		Scanner input = new Scanner(System.in);
 		boolean running = true;
     	int choice;
         do {
@@ -66,7 +76,7 @@ public class App
 	                
 	            	if (fileS.isValid()) {
 	            		System.out.println("...Uploading & Scanning...");
-	            		fileS.post(API_KEY);
+	            		fileS.post(apiKey);
 	            	} else if (filename.matches("[a-fA-F0-9]{64}") || filename.matches("[a-fA-F0-9]{40}") || filename.matches("[a-fA-F0-9]{32}")) {
 	            		// Mode: Try MD5/SHA1/SHA256 File Lookup
 	            		System.out.println("...Assuming File MD5/SHA1/SHA256 Lookup...");
@@ -76,7 +86,7 @@ public class App
 	            	}
 	            	
 	            	System.out.println(GET_REPORT_NOTI);
-            		fileS.getReport(API_KEY);
+            		fileS.getReport(apiKey);
             		if (fileS.getJson() == null) {
             			System.out.println("ERROR: No file to analyze!\n");
 	            		Thread.sleep(1000);
@@ -90,12 +100,12 @@ public class App
             		System.out.println("STARTING: URL Analysis");
                 	System.out.print("> Input URL (or Enter to cancel): ");
                 	String url = input.nextLine().strip();
-                	System.out.println("");
+                	System.out.println();
                 	URLScan urlS = new URLScan();
                 	if (!url.isBlank()) {
     	            	urlS.setName(url);
     	            	System.out.println("...Scanning...");
-    	            	urlS.post(API_KEY);
+    	            	urlS.post(apiKey);
                 	} else{
                     	System.out.println(INVALID_INPUT_ER);
                     	Thread.sleep(1000);
@@ -104,7 +114,7 @@ public class App
                 	
                 	if (urlS.getObjectId() != null) {
                 		System.out.println(GET_REPORT_NOTI);
-    	            	urlS.getReport(API_KEY);
+    	            	urlS.getReport(apiKey);
     	            	actionsMenu(urlS, input);
                 	}
                 	Thread.sleep(1000);
@@ -118,7 +128,7 @@ public class App
 	            	
 	            	if (domainS.isValid()) {
 	            		System.out.println(GET_REPORT_NOTI);
-		            	domainS.getReport(API_KEY);
+		            	domainS.getReport(apiKey);
 	            	} else{
 	            		System.out.println(INVALID_INPUT_ER);
                     	Thread.sleep(1000);
@@ -137,7 +147,7 @@ public class App
 	            	
 	            	if (ipS.isValid() ) {
 	            		System.out.println(GET_REPORT_NOTI);
-		            	ipS.getReport(API_KEY);
+		            	ipS.getReport(apiKey);
 	            	} else{
 	            		System.out.println("ERROR: Invalid Input...\n");
                     	Thread.sleep(1000);
@@ -246,14 +256,14 @@ public class App
     			if (ss instanceof FileScan || ss instanceof URLScan) {
     				if (ss.getTime() == 0) {
     					System.out.println("...Retry getting report...");
-    					ss.getReport(API_KEY);
+    					ss.getReport(apiKey);
     					if (ss.getTime() != 0)
     						System.out.println("...Updated finished analysis!");
     				}
     				else {
     					long oldtime = ss.getTime();
     					System.out.println("...Updating results/Requesting re-analyze...");
-    					ss.getReport(API_KEY);
+    					ss.getReport(apiKey);
     					if (ss.getTime() == oldtime)
     						System.out.println("...No new analysis found.\n(Updated VT results may need a few minutes)");
     					else
